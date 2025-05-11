@@ -1,14 +1,14 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import React from 'react';
+// import React from 'react';
 import './App.css';
 
 // Import page components
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import InviteUser from './pages/InviteUser';
-import TermsOfService from './pages/TermsOfService';
-import NotificationPreferences from './pages/NotificationPreferences';
+// import InviteUser from './pages/InviteUser';
+// import TermsOfService from './pages/TermsOfService';
+// import NotificationPreferences from './pages/NotificationPreferences';
 
 // Import layout and auth components
 import Layout from './components/layout/Layout';
@@ -23,14 +23,14 @@ function App() {
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
+          {/* <Route path="/terms-of-service" element={<TermsOfService />} /> */}
           
           {/* Protected routes - using the Outlet pattern */}
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/invite" element={<InviteUser />} />
-              <Route path="/notifications" element={<NotificationPreferences />} />
+              {/* <Route path="/invite" element={<InviteUser />} /> */}
+              {/* <Route path="/notifications" element={<NotificationPreferences />} /> */}
             </Route>
           </Route>
           
