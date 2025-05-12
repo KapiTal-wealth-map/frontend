@@ -6,6 +6,7 @@ interface User {
   name: string;
   role: string;
   company?: string;
+  mfaEnabled?: boolean;
 }
 
 interface AuthContextType {
@@ -15,6 +16,7 @@ interface AuthContextType {
   login: (token: string, user: User) => void;
   logout: () => void;
   loading: boolean;
+  setUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -69,7 +71,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: !!token,
     login,
     logout,
-    loading
+    loading,
+    setUser: (newUser: User) => {
+      setUser(newUser);
+      localStorage.setItem('auth_user', JSON.stringify(newUser));
+    }
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

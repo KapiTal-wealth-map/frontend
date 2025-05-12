@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { uploadLogo } from '../../utils/supabase';
 
 const RegisterForm: React.FC = () => {
   const [companyName, setCompanyName] = useState('');
@@ -12,15 +13,25 @@ const RegisterForm: React.FC = () => {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  // MFA setup state
-  const [showMfaSetup, setShowMfaSetup] = useState(false);
-  const [mfaQrCode, setMfaQrCode] = useState('');
-  const [mfaSecret, setMfaSecret] = useState('');
-  const [mfaCode, setMfaCode] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setLogoFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,20 +51,35 @@ const RegisterForm: React.FC = () => {
     setLoading(true);
     
     try {
-      if (!showMfaSetup) {
-        // First step: Register company and admin user
-        const response = await authAPI.register(companyName, email, password, name);
+      // Register company and admin user
+      const formData = new FormData();
+      formData.append('companyName', companyName);
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('name', name);
+      
+      // Register without logo first
+      const response = await authAPI.register(companyName, email, password, name);
+      
+      // If registration successful and we have a logo, upload it to Supabase
+      if (response.success && logoFile && response.company?.id) {
+        const companyId = response.company.id;
+        const logoUrl = await uploadLogo(logoFile, companyId);
         
-        // Show MFA setup
-        setMfaQrCode(response.mfaQrCode);
-        setMfaSecret(response.mfaSecret);
-        setShowMfaSetup(true);
-      } else {
-        // Second step: Verify MFA setup
-        const response = await authAPI.verifyMFA(email, mfaCode);
-        login(response.token, response.user);
-        navigate('/dashboard');
+        // Update company with logo URL
+        if (logoUrl) {
+          // Here you would normally update the company record with the logo URL
+          // This could be done via an API call to update the company
+          console.log('Logo uploaded successfully:', logoUrl);
+        }
       }
+      
+      // Login the user
+      const loginResponse = await authAPI.login(email, password);
+      login(loginResponse.token, loginResponse.user);
+      
+      // Skip MFA setup and redirect directly to onboarding tutorial
+      navigate('/onboarding-tutorial');
     } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred during registration');
     } finally {
@@ -66,16 +92,14 @@ const RegisterForm: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {showMfaSetup ? 'Set up Two-Factor Authentication' : 'Register your company'}
+            Register your company
           </h2>
-          {!showMfaSetup && (
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Or{' '}
-              <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                sign in to your account
-              </Link>
-            </p>
-          )}
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Or{' '}
+            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+              sign in to your account
+            </Link>
+          </p>
         </div>
         
         {error && (
@@ -94,148 +118,129 @@ const RegisterForm: React.FC = () => {
         )}
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {!showMfaSetup ? (
-            <>
-              <div className="rounded-md shadow-sm -space-y-px">
-                <div>
-                  <label htmlFor="company-name" className="sr-only">Company name</label>
-                  <input
-                    id="company-name"
-                    name="companyName"
-                    type="text"
-                    required
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Company name"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                  />
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <label htmlFor="company-name" className="sr-only">Company name</label>
+              <input
+                id="company-name"
+                name="companyName"
+                type="text"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Company name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="name" className="sr-only">Your name</label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="email-address" className="sr-only">Email address</label>
+              <input
+                id="email-address"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="sr-only">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="confirm-password" className="sr-only">Confirm password</label>
+              <input
+                id="confirm-password"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Confirm password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700">Company Logo</label>
+            <div className="mt-1 flex items-center">
+              {logoPreview ? (
+                <div className="mr-4">
+                  <img src={logoPreview} alt="Company logo preview" className="h-16 w-16 object-contain bg-gray-100 rounded-md" />
                 </div>
-                <div>
-                  <label htmlFor="name" className="sr-only">Your name</label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
+              ) : (
+                <div className="h-16 w-16 border-2 border-gray-300 border-dashed rounded-md flex items-center justify-center text-gray-400 mr-4">
+                  <svg className="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
                 </div>
-                <div>
-                  <label htmlFor="email-address" className="sr-only">Email address</label>
-                  <input
-                    id="email-address"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="password" className="sr-only">Password</label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="confirm-password" className="sr-only">Confirm password</label>
-                  <input
-                    id="confirm-password"
-                    name="confirmPassword"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Confirm password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center">
+              )}
+              <div>
                 <input
-                  id="agree-terms"
-                  name="agreeTerms"
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  checked={agreeToTerms}
-                  onChange={(e) => setAgreeToTerms(e.target.checked)}
+                  id="company-logo"
+                  name="company-logo"
+                  type="file"
+                  className="sr-only"
+                  accept="image/*"
+                  onChange={handleLogoChange}
                 />
-                <label htmlFor="agree-terms" className="ml-2 block text-sm text-gray-900">
-                  I agree to the{' '}
-                  <Link to="/terms-of-service" className="font-medium text-blue-600 hover:text-blue-500">
-                    terms of service
-                  </Link>
+                <label
+                  htmlFor="company-logo"
+                  className="cursor-pointer py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+                >
+                  Upload logo
                 </label>
-              </div>
-            </>
-          ) : (
-            <div className="space-y-6">
-              <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Scan this QR code</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Use an authenticator app like Google Authenticator, Microsoft Authenticator, or Authy to scan this QR code.
-                </p>
-                <div className="mt-4 flex justify-center">
-                  {/* This would be an actual QR code image in production */}
-                  <div className="bg-white p-4 rounded-md border border-gray-300">
-                    <div className="h-48 w-48 flex items-center justify-center text-gray-400">
-                      QR Code Placeholder
-                      <br />
-                      (Would be an actual QR code in production)
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="mfa-secret" className="block text-sm font-medium text-gray-700">
-                  Or enter this code manually
-                </label>
-                <div className="mt-1">
-                  <input
-                    type="text"
-                    id="mfa-secret"
-                    className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-100"
-                    value={mfaSecret || 'EXAMPLECODE123456'}
-                    readOnly
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="mfa-code" className="block text-sm font-medium text-gray-700">
-                  Enter the 6-digit code from your authenticator app
-                </label>
-                <div className="mt-1">
-                  <input
-                    type="text"
-                    id="mfa-code"
-                    className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                    placeholder="000000"
-                    value={mfaCode}
-                    onChange={(e) => setMfaCode(e.target.value)}
-                    required
-                  />
-                </div>
               </div>
             </div>
-          )}
+            <p className="mt-2 text-sm text-gray-500">
+              PNG, JPG, or GIF up to 2MB. Recommended size: 128x128px.
+            </p>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              id="agree-terms"
+              name="agreeTerms"
+              type="checkbox"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              checked={agreeToTerms}
+              onChange={(e) => setAgreeToTerms(e.target.checked)}
+            />
+            <label htmlFor="agree-terms" className="ml-2 block text-sm text-gray-900">
+              I agree to the{' '}
+              <Link to="/terms-of-service" className="font-medium text-blue-600 hover:text-blue-500">
+                terms of service
+              </Link>
+            </label>
+          </div>
 
           <div>
             <button
@@ -249,7 +254,7 @@ const RegisterForm: React.FC = () => {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               ) : null}
-              {showMfaSetup ? 'Verify and Complete Setup' : 'Register'}
+              Register
             </button>
           </div>
         </form>
