@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authAPI } from '../../services/api';
+import { authAPI, userAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { uploadLogo } from '../../utils/supabase';
 
@@ -60,26 +60,37 @@ const RegisterForm: React.FC = () => {
       
       // Register without logo first
       const response = await authAPI.register(companyName, email, password, name);
-      
-      // If registration successful and we have a logo, upload it to Supabase
-      if (response.success && logoFile && response.company?.id) {
-        const companyId = response.company.id;
-        const logoUrl = await uploadLogo(logoFile, companyId);
+
+      if (response.success) {
+        // Login the user after successful registration
+        const loginResponse = await authAPI.login(email, password);
+        login(loginResponse.token, loginResponse.user);
         
-        // Update company with logo URL
-        if (logoUrl) {
-          // Here you would normally update the company record with the logo URL
-          // This could be done via an API call to update the company
-          console.log('Logo uploaded successfully:', logoUrl);
+        // If we have a logo, upload it to Supabase and update company settings
+        if (logoFile && response.company?.id) {
+          try {
+            const companyId = response.company.id;
+            const logoUrl = await uploadLogo(logoFile, companyId);
+            
+            // Update company with logo URL
+            if (logoUrl) {
+              const data = { name: companyName, logoUrl, dataAccessSettings: {} };
+              const updateResponse = await userAPI.updateCompanySettings(data);
+              if (updateResponse.success) {
+                console.log('Logo uploaded successfully');
+              } else {
+                console.log('Failed to update company settings:', updateResponse.message);
+              }
+            }
+          } catch (logoError) {
+            console.error('Error uploading logo:', logoError);
+            // Don't throw the error, just log it since registration was successful
+          }
         }
       }
-      
-      // Login the user
-      const loginResponse = await authAPI.login(email, password);
-      login(loginResponse.token, loginResponse.user);
-      
+    
       // Skip MFA setup and redirect directly to onboarding tutorial
-      navigate('/onboarding-tutorial');
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred during registration');
     } finally {

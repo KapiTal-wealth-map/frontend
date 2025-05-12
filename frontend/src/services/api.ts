@@ -145,7 +145,7 @@ export const userAPI = {
   updateCompanySettings: async (data: {
     name: string;
     logoUrl: string | null;
-    dataAccessPreferences: any;
+    dataAccessSettings: any;
   }) => {
     const response = await api.put('/users/company-settings', data);
     return response.data;

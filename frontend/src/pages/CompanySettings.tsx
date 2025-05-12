@@ -105,7 +105,7 @@ const CompanySettings: React.FC = () => {
       await userAPI.updateCompanySettings({
         name: settings.name,
         logoUrl: logoUrl,
-        dataAccessPreferences: settings.dataAccessSettings
+        dataAccessSettings: settings.dataAccessSettings
       });
       
       setSuccess('Company settings updated successfully');

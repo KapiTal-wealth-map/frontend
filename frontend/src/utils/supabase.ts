@@ -14,13 +14,12 @@ export const uploadLogo = async (file: File, companyId: string): Promise<string 
     const fileExt = file.name.split('.').pop();
     const fileName = `${companyId}_logo_${Date.now()}.${fileExt}`;
     
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('company-logos')
       .upload(fileName, file, {
         cacheControl: '3600',
         upsert: true
       });
-    
     if (error) {
       console.error('Error uploading logo:', error);
       return null;
@@ -30,7 +29,6 @@ export const uploadLogo = async (file: File, companyId: string): Promise<string 
     const { data: urlData } = supabase.storage
       .from('company-logos')
       .getPublicUrl(fileName);
-    
     return urlData.publicUrl;
   } catch (error) {
     console.error('Error in uploadLogo:', error);
@@ -40,7 +38,6 @@ export const uploadLogo = async (file: File, companyId: string): Promise<string 
 
 // Get logo URL from Supabase Storage
 export const getLogoUrl = (path: string): string | null => {
-  console.log(path,"dasdkadad")
   if (!path) return null;
   
   const { data } = supabase.storage
