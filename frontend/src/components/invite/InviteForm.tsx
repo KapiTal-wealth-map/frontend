@@ -3,7 +3,7 @@ import { userAPI } from '../../services/api';
 
 const InviteForm: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('user');
+  const [role, setRole] = useState('employee');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -15,9 +15,11 @@ const InviteForm: React.FC = () => {
     setLoading(true);
     
     try {
-      await userAPI.inviteUser(email, role);
-      setSuccess(`Invitation sent to ${email}`);
-      setEmail('');
+      const result = await userAPI.inviteUser(email, role);
+      if (result.success) {
+        setSuccess(`Invitation sent to ${email}`);
+        setEmail('');
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to send invitation');
     } finally {

@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import dashboard from '../../assets/onboarding/dashboard.png';
+import orgMem from '../../assets/onboarding/orgMem.png';
+import security from '../../assets/onboarding/security.png';
+import notification from '../../assets/onboarding/notification.png';
 
 interface TutorialStep {
   title: string;
@@ -20,22 +24,22 @@ const OnboardingTutorial: React.FC = () => {
     {
       title: 'Your Dashboard',
       description: 'Your dashboard provides an overview of your activity, saved searches, and quick access to all features. It\'s your command center for wealth mapping!',
-      image: '/assets/onboarding/dashboard.svg',
+      image: dashboard,
     },
     {
       title: 'Organization Members',
       description: 'Connect with your team and manage access levels. Administrators can invite new members and set permissions.',
-      image: '/assets/onboarding/team.svg',
+      image: orgMem,
     },
     {
       title: 'Security Features',
       description: 'We take security seriously. Set up multi-factor authentication in your profile settings to protect your account.',
-      image: '/assets/onboarding/security.svg',
+      image: security,
     },
     {
       title: 'Notification Preferences',
       description: 'Stay informed about important updates. Customize your notification preferences to receive only the alerts that matter to you.',
-      image: '/assets/onboarding/notifications.svg',
+      image: notification,
     },
   ];
   
@@ -45,6 +49,12 @@ const OnboardingTutorial: React.FC = () => {
     } else {
       // Tutorial is complete, redirect to dashboard
       navigate('/dashboard');
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
     }
   };
   
@@ -105,7 +115,15 @@ const OnboardingTutorial: React.FC = () => {
               >
                 Skip tutorial
               </button>
-              
+              {currentStep > 0 && (
+              <button
+                type="button"
+                onClick={handleBack}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Back
+              </button>
+              )}
               <button
                 type="button"
                 onClick={handleNext}

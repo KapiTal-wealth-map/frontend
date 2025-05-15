@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { userAPI } from '../services/api';
+import { authAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const AcceptInvite: React.FC = () => {
@@ -45,19 +45,22 @@ const AcceptInvite: React.FC = () => {
       }
       
       const result = await userAPI.acceptInvite(token, name, password);
-      setSuccess(true);
+      if (result.success) {
+        setSuccess(true);
+      }
       
       // Store auth data
-      if (result.token && result.user) {
-        login(result.token, result.user);
+      if (result.success) {
+        const loginResponse = await authAPI.login(result.email, password);
+        login(loginResponse.token, loginResponse.user);
       }
       
       // Redirect to onboarding tutorial after 2 seconds
       setTimeout(() => {
-        navigate('/onboarding-tutorial');
+        navigate('/onboarding');
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to accept invitation');
+      setError(err.response?.data?.error || 'Failed to accept invitation');
     } finally {
       setLoading(false);
     }
