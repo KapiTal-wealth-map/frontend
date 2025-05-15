@@ -174,7 +174,7 @@ const TeamMembers: React.FC = () => {
                         disabled={member.status === 'inactive'}
                       >
                         <option value="admin">Admin</option>
-                        <option value="user">Employee</option>
+                        <option value="employee">Employee</option>
                       </select>
                     ) : (
                       <span className="text-sm text-gray-500">

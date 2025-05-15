@@ -1,21 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { notificationAPI } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 
 interface NotificationSettings {
-  emailNotifications: boolean;
-  smsNotifications: boolean;
-  appNotifications: boolean;
-  marketingEmails: boolean;
+  email: boolean;
+  inApp: boolean;
 }
 
 const NotificationPreferences: React.FC = () => {
-  const { user } = useAuth();
   const [settings, setSettings] = useState<NotificationSettings>({
-    emailNotifications: true,
-    smsNotifications: false,
-    appNotifications: true,
-    marketingEmails: false,
+    email: true,
+    inApp: true,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -113,8 +107,8 @@ const NotificationPreferences: React.FC = () => {
                 id="email-notifications"
                 name="emailNotifications"
                 type="checkbox"
-                checked={settings.emailNotifications}
-                onChange={() => handleToggle('emailNotifications')}
+                checked={settings.email}
+                onChange={() => handleToggle('email')}
                 className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
               />
             </div>
@@ -124,22 +118,7 @@ const NotificationPreferences: React.FC = () => {
             </div>
           </div>
           
-          <div className="relative flex items-start">
-            <div className="flex items-center h-5">
-              <input
-                id="sms-notifications"
-                name="smsNotifications"
-                type="checkbox"
-                checked={settings.smsNotifications}
-                onChange={() => handleToggle('smsNotifications')}
-                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
-              />
-            </div>
-            <div className="ml-3 text-sm">
-              <label htmlFor="sms-notifications" className="font-medium text-gray-700">SMS Notifications</label>
-              <p className="text-gray-500">Receive notifications via SMS text messages.</p>
-            </div>
-          </div>
+         
           
           <div className="relative flex items-start">
             <div className="flex items-center h-5">
@@ -147,8 +126,8 @@ const NotificationPreferences: React.FC = () => {
                 id="app-notifications"
                 name="appNotifications"
                 type="checkbox"
-                checked={settings.appNotifications}
-                onChange={() => handleToggle('appNotifications')}
+                checked={settings.inApp}
+                onChange={() => handleToggle('inApp')}
                 className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
               />
             </div>
@@ -157,23 +136,7 @@ const NotificationPreferences: React.FC = () => {
               <p className="text-gray-500">Receive notifications within the application.</p>
             </div>
           </div>
-          
-          <div className="relative flex items-start">
-            <div className="flex items-center h-5">
-              <input
-                id="marketing-emails"
-                name="marketingEmails"
-                type="checkbox"
-                checked={settings.marketingEmails}
-                onChange={() => handleToggle('marketingEmails')}
-                className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
-              />
-            </div>
-            <div className="ml-3 text-sm">
-              <label htmlFor="marketing-emails" className="font-medium text-gray-700">Marketing Emails</label>
-              <p className="text-gray-500">Receive emails about new features, tips, and other marketing communications.</p>
-            </div>
-          </div>
+        
           
           <div className="flex justify-end">
             <button

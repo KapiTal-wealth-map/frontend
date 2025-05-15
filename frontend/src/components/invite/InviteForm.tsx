@@ -85,7 +85,7 @@ const InviteForm: React.FC = () => {
             value={role}
             onChange={(e) => setRole(e.target.value)}
           >
-            <option value="user">Employee</option>
+            <option value="employee">Employee</option>
             <option value="admin">Admin</option>=
           </select>
         </div>

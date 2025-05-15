@@ -42,11 +42,17 @@ const CompanySettings: React.FC = () => {
     try {
       setLoading(true);
       const data = await userAPI.getCompanySettings();
-      setSettings(data);
-      if (data.logo) {
-        setLogoPreview(data.logo);
+      const companyData = {
+        name: data.company.name,
+        logo: data.company.logo,
+        dataAccessSettings: data.company.dataAccessSettings
+      };
+      setSettings(companyData);
+      if (data.company.logo) {
+        setLogoPreview(data.company.logo);
       }
     } catch (err: any) {
+      console.log("error from company settings", err)
       setError(err.response?.data?.message || 'Failed to fetch company settings');
     } finally {
       setLoading(false);
@@ -139,17 +145,114 @@ const CompanySettings: React.FC = () => {
   
   if (!isAdmin) {
     return (
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
+      <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6">Company Settings</h2>
+        
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-lg font-medium text-gray-900">Basic Information</h3>
+            <div className="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+              <div className="sm:col-span-3">
+                <label className="block text-sm font-medium text-gray-700">Company Name</label>
+                <p className="mt-1 text-sm text-gray-900">{settings.name}</p>
+              </div>
+              
+              <div className="sm:col-span-6">
+                <label className="block text-sm font-medium text-gray-700">Company Logo</label>
+                <div className="mt-1">
+                  <CompanyLogo 
+                    logoUrl={settings.logo}
+                    companyName={settings.name}
+                    size="large"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="ml-3">
-            <p className="text-sm text-yellow-700">
-              Only administrators can access company settings. Please contact your administrator for assistance.
+          
+          <div>
+            <h3 className="text-lg font-medium text-gray-900">Your Access Settings</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              These are your current access permissions in the platform.
             </p>
+            
+            <div className="mt-4 space-y-4">
+              <div className="relative flex items-start">
+                <div className="flex items-center h-5">
+                  <input
+                    type="checkbox"
+                    checked={settings.dataAccessSettings.allowPublicProfileViewing}
+                    disabled
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                </div>
+                <div className="ml-3 text-sm">
+                  <label className="font-medium text-gray-700">Public Profile Viewing</label>
+                  <p className="text-gray-500">
+                    {settings.dataAccessSettings.allowPublicProfileViewing 
+                      ? "You can view public profiles of property owners."
+                      : "You cannot view public profiles of property owners."}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="relative flex items-start">
+                <div className="flex items-center h-5">
+                  <input
+                    type="checkbox"
+                    checked={settings.dataAccessSettings.allowEmployeeDataExport}
+                    disabled
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                </div>
+                <div className="ml-3 text-sm">
+                  <label className="font-medium text-gray-700">Data Export</label>
+                  <p className="text-gray-500">
+                    {settings.dataAccessSettings.allowEmployeeDataExport
+                      ? "You can export data from the platform."
+                      : "You cannot export data from the platform."}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="relative flex items-start">
+                <div className="flex items-center h-5">
+                  <input
+                    type="checkbox"
+                    checked={settings.dataAccessSettings.allowEmployeePropertySearch}
+                    disabled
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                </div>
+                <div className="ml-3 text-sm">
+                  <label className="font-medium text-gray-700">Property Search</label>
+                  <p className="text-gray-500">
+                    {settings.dataAccessSettings.allowEmployeePropertySearch
+                      ? "You can search for properties in the platform."
+                      : "You cannot search for properties in the platform."}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="relative flex items-start">
+                <div className="flex items-center h-5">
+                  <input
+                    type="checkbox"
+                    checked={settings.dataAccessSettings.restrictSensitiveData}
+                    disabled
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                </div>
+                <div className="ml-3 text-sm">
+                  <label className="font-medium text-gray-700">Sensitive Data Access</label>
+                  <p className="text-gray-500">
+                    {settings.dataAccessSettings.restrictSensitiveData
+                      ? "You have restricted access to sensitive information like detailed wealth data or contact details."
+                      : "You have full access to all data including sensitive information."}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

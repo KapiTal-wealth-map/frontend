@@ -160,13 +160,13 @@ export const userAPI = {
 // Notification preferences API calls
 export const notificationAPI = {
   getPreferences: async () => {
-    const response = await api.get('/notifications/preferences');
-    return response.data;
+    const response = await api.get('/users/notification-preferences');
+    return response.data.notificationPreferences;
   },
   
   updatePreferences: async (preferences: any) => {
-    const response = await api.put('/notifications/preferences', preferences);
-    return response.data;
+    const response = await api.put('/users/notification-preferences', { preferences });
+    return response.data.notificationPreferences;
   }
 };
 
