@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useMap } from 'react-leaflet';
+import type { PropertyFilters } from '../../services/api';
 
 // Mock data structure for saved map views
 export interface SavedMapView {
@@ -8,7 +9,10 @@ export interface SavedMapView {
   center: [number, number];
   zoom: number;
   createdAt: string;
-  filters?: any;
+  filters?: PropertyFilters;
+  showProperties?: boolean;
+  showHeatmap?: boolean;
+  showClusters?: boolean;
 }
 
 interface SaveMapDialogProps {

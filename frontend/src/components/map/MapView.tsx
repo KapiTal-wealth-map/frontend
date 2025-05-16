@@ -3,12 +3,13 @@ import { MapContainer, TileLayer, ZoomControl, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
-import { PropertyMarker } from './PropertyMarker';
-import type { Property } from './PropertyMarker';
+import PropertyMarker from './PropertyMarker';
+import type { Property, PropertyFilters } from '../../services/api';
 import { MapToggleControls } from './MapToggleControls';
 import WealthHeatmapLayer from './WealthHeatmapLayer';
 import PropertyDetail from './PropertyDetail';
-import { PropertyFilters } from './PropertyFilters';
+import { propertyAPI } from '../../services/api';
+import ClusterLayer from './ClusterLayer';
 
 // Add CSS for marker clusters
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -24,83 +25,17 @@ L.Icon.Default.mergeOptions({
 
 // Note: Custom property icons are now managed in the PropertyMarker component
 
-// Dummy property data (to be replaced with API data later)
-const dummyProperties = [
-  {
-    id: 1,
-    lat: 37.7749,
-    lng: -122.4194,
-    address: '123 Main St, San Francisco, CA',
-    price: 1200000,
-    sqft: 1800,
-    bedrooms: 3,
-    bathrooms: 2,
-    yearBuilt: 2010,
-    ownerNetWorth: 5000000,
-    ownerName: 'John Smith',
-  },
-  {
-    id: 2,
-    lat: 37.7833,
-    lng: -122.4167,
-    address: '456 Market St, San Francisco, CA',
-    price: 2500000,
-    sqft: 3200,
-    bedrooms: 4,
-    bathrooms: 3.5,
-    yearBuilt: 2015,
-    ownerNetWorth: 12000000,
-    ownerName: 'Jane Doe',
-  },
-  {
-    id: 3,
-    lat: 37.7694,
-    lng: -122.4862,
-    address: '789 Sunset Blvd, San Francisco, CA',
-    price: 950000,
-    sqft: 1200,
-    bedrooms: 2,
-    bathrooms: 1,
-    yearBuilt: 1998,
-    ownerNetWorth: 3000000,
-    ownerName: 'Robert Johnson',
-  },
-  {
-    id: 4,
-    lat: 37.8025,
-    lng: -122.4351,
-    address: '101 California St, San Francisco, CA',
-    price: 4500000,
-    sqft: 5000,
-    bedrooms: 5,
-    bathrooms: 4.5,
-    yearBuilt: 2020,
-    ownerNetWorth: 25000000,
-    ownerName: 'Elizabeth Taylor',
-  },
-  {
-    id: 5,
-    lat: 37.7599,
-    lng: -122.4148,
-    address: '555 Mission St, San Francisco, CA',
-    price: 3200000,
-    sqft: 4200,
-    bedrooms: 4,
-    bathrooms: 3,
-    yearBuilt: 2018,
-    ownerNetWorth: 18000000,
-    ownerName: 'Michael Brown',
-  },
-];
-
-// We'll use the properties data directly for the heatmap
+// interface ClusterProperties {
+//   center: [number, number];
+//   count: number;
+// }
 
 interface MapViewProps {
+  showProperties: boolean;
+  showHeatmap: boolean;
+  showClusters: boolean;
   initialCenter?: [number, number];
-  initialZoom?: number;
-  showProperties?: boolean;
-  showHeatmap?: boolean;
-  showClusters?: boolean;
+  filters?: PropertyFilters;
 }
 
 // Component to handle map view changes
@@ -120,77 +55,91 @@ const MapViewController: React.FC<{
 };
 
 const MapView: React.FC<MapViewProps> = ({ 
-  initialCenter = [37.7749, -122.4194], // San Francisco
-  initialZoom = 13,
-  showProperties = true,
-  showHeatmap = false,
-  showClusters = true
+  showProperties, 
+  showHeatmap, 
+  showClusters,
+  initialCenter,
+  filters 
 }) => {
-  const [center, setCenter] = useState<[number, number]>(initialCenter);
-  const [zoom, setZoom] = useState<number>(initialZoom);
-  const [properties, setProperties] = useState(dummyProperties);
-  // Use props for initial state but maintain internal state for toggle controls
-  const [showHeatMap, setShowHeatMap] = useState(showHeatmap);
-  
-  // Update internal state when props change
-  useEffect(() => {
-    setShowHeatMap(showHeatmap);
-  }, [showHeatmap]);
-  
-  // Use the props directly for these instead of maintaining internal state
-  // This ensures changes from the sidebar controls are reflected immediately
-  const showPropertyMarkers = showProperties;
-  const enableClustering = showClusters;
-  const [mapType, setMapType] = useState<'street' | 'satellite'>('street');
-  // Import PropertyFilters type to ensure compatibility
-  const [filters, setFilters] = useState<PropertyFilters>({
-    minPrice: 0,
-    maxPrice: 10000000,
-    minSize: 0,
-    maxSize: 10000,
-    location: '',
+  const [viewState, setViewState] = useState({
+    longitude: initialCenter?.[1] || -118.2437,
+    latitude: initialCenter?.[0] || 34.0522,
+    zoom: 13
   });
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showHeatMap, setShowHeatMap] = useState(showHeatmap);
+  const [mapType, setMapType] = useState<'street' | 'satellite'>('street');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const mapRef = useRef<L.Map | null>(null);
 
+  // Fetch properties on component mount and when filters change
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await propertyAPI.filterProperties(filters || {});
+        setProperties(response);
+      } catch (err) {
+        setError('Failed to fetch properties. Please try again later.');
+        console.error('Error fetching properties:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, [filters]);
+
   // Filter properties based on criteria
   const filteredProperties = useMemo(() => properties.filter(property => {
+    if (!filters) return true;
+    
     return (
       property.price >= (filters.minPrice ?? 0) &&
       property.price <= (filters.maxPrice ?? Number.MAX_VALUE) &&
-      property.sqft >= (filters.minSize ?? 0) &&
-      property.sqft <= (filters.maxSize ?? Number.MAX_VALUE) &&
-      (!filters.location || property.address.toLowerCase().includes(filters.location.toLowerCase()))
+      property.sizeSqFt >= (filters.minSize ?? 0) &&
+      property.sizeSqFt <= (filters.maxSize ?? Number.MAX_VALUE) &&
+      property.beds >= (filters.minBeds ?? 0) &&
+      property.beds <= (filters.maxBeds ?? Number.MAX_VALUE) &&
+      property.baths >= (filters.minBaths ?? 0) &&
+      property.baths <= (filters.maxBaths ?? Number.MAX_VALUE) &&
+      (!filters.city || property.city.toLowerCase().includes(filters.city.toLowerCase())) &&
+      (!filters.state || property.state.toLowerCase().includes(filters.state.toLowerCase())) &&
+      (!filters.zip || property.zip.includes(filters.zip)) &&
+      (!filters.county || property.county.toLowerCase().includes(filters.county.toLowerCase())) &&
+      property.estimatedValue >= (filters.minEstimatedValue ?? 0) &&
+      property.estimatedValue <= (filters.maxEstimatedValue ?? Number.MAX_VALUE) &&
+      property.medianIncome >= (filters.minMedianIncome ?? 0) &&
+      property.medianIncome <= (filters.maxMedianIncome ?? Number.MAX_VALUE)
     );
   }), [properties, filters]);
 
-  // Convert property data to heatmap points
-  const heatmapPoints = useMemo(() => properties.map(prop => ({
-    lat: prop.lat,
-    lng: prop.lng,
-    intensity: prop.ownerNetWorth / 1000000 // Scale down for better visualization
-  })), [properties]);
+  // Convert property data to heatmap points with better intensity calculation
+  const heatmapPoints = useMemo(() => {
+    if (properties.length === 0) return [];
+    
+    // Find min and max values for normalization
+    const values = properties.map(prop => prop.estimatedValue);
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    const range = maxValue - minValue;
+    
+    return properties.map(prop => ({
+      lat: prop.lat,
+      lng: prop.lng,
+      // Normalize intensity between 0 and 1, with exponential scaling for better visualization
+      intensity: Math.pow((prop.estimatedValue - minValue) / range, 0.5)
+    }));
+  }, [properties]);
 
-  const handleFilterChange = useCallback((newFilters: PropertyFilters) => {
-    setFilters(newFilters);
-  }, []);
-  
-  const handleApplyFilters = useCallback(() => {
-    // This is already handled by the handleFilterChange since we're applying changes immediately
-  }, []);
-  
-  const handleResetFilters = useCallback(() => {
-    setFilters({
-      minPrice: 0,
-      maxPrice: 10000000,
-      minSize: 0,
-      maxSize: 10000,
-      location: '',
-    });
-  }, []);
-
-  const handleMapReady = useCallback((map: L.Map) => {
-    mapRef.current = map;
+  const handleMapReady = useCallback(() => {
+    if (mapRef.current) {
+      // The map is already available in mapRef.current
+      return;
+    }
   }, []);
 
   const handleToggleHeatMap = useCallback(() => {
@@ -209,24 +158,54 @@ const MapView: React.FC<MapViewProps> = ({
     setSelectedProperty(null);
   }, []);
 
+  // Update viewState when initialCenter changes
+  useEffect(() => {
+    if (initialCenter) {
+      setViewState(prev => ({
+        ...prev,
+        longitude: initialCenter[1],
+        latitude: initialCenter[0],
+        zoom: 13
+      }));
+    }
+  }, [initialCenter]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading properties...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center text-red-600">
+          <p>{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 bg-white shadow-md">
-        <PropertyFilters 
-          filters={filters} 
-          onFilterChange={handleFilterChange}
-          onApplyFilters={handleApplyFilters}
-          onResetFilters={handleResetFilters} 
-        />
-      </div>
-      
       <div className="flex-grow relative">
         <MapContainer
-          center={center}
-          zoom={zoom}
+          center={[viewState.latitude, viewState.longitude]}
+          zoom={viewState.zoom}
           style={{ height: '100%', width: '100%' }}
           zoomControl={false}
-          whenReady={(e) => handleMapReady(e.target)}
+          whenReady={handleMapReady}
         >
           {mapType === 'street' ? (
             <TileLayer
@@ -240,10 +219,17 @@ const MapView: React.FC<MapViewProps> = ({
             />
           )}
           <ZoomControl position="bottomright" />
-          <MapViewController center={center} zoom={zoom} />
+          <MapViewController center={[viewState.latitude, viewState.longitude]} zoom={viewState.zoom} />
           
-          {/* Render property markers directly if showing properties and not using clusters */}
-          {showPropertyMarkers && !enableClustering && filteredProperties.map(property => (
+          {showProperties && showClusters && (
+            <ClusterLayer
+              properties={filteredProperties}
+              onSelectProperty={handlePropertySelect}
+              visible={true}
+            />
+          )}
+          
+          {showProperties && !showClusters && filteredProperties.map(property => (
             <PropertyMarker
               key={property.id}
               property={property}
@@ -251,22 +237,6 @@ const MapView: React.FC<MapViewProps> = ({
             />
           ))}
           
-          {/* Render property markers in clusters if both options are enabled */}
-          {showPropertyMarkers && enableClustering && filteredProperties.length > 0 && (
-            <div className="leaflet-marker-cluster-container">
-              {/* We're not using ClusterLayer component directly anymore */}
-              {/* Instead, we leverage native marker clustering behind the scenes */}
-              {filteredProperties.map(property => (
-                <PropertyMarker
-                  key={property.id}
-                  property={property}
-                  onClick={handlePropertySelect}
-                />
-              ))}
-            </div>
-          )}
-          
-          {/* Wealth heatmap layer */}
           {showHeatMap && (
             <WealthHeatmapLayer 
               points={heatmapPoints}
@@ -280,18 +250,9 @@ const MapView: React.FC<MapViewProps> = ({
             mapType={mapType}
             onChangeMapType={handleChangeMapType}
           />
-          
-          {/* Render property detail modal when a property is selected */}
-          {selectedProperty && (
-            <PropertyDetail
-              property={selectedProperty}
-              onClose={() => setSelectedProperty(null)}
-            />
-          )}
         </MapContainer>
       </div>
       
-      {/* Property Detail Modal */}
       {selectedProperty && (
         <PropertyDetail 
           property={selectedProperty} 

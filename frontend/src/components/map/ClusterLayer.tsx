@@ -1,22 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.markercluster';
-import type { Property } from './PropertyMarker';
-
-// Add this declaration for the leaflet.markercluster plugin
-declare module 'leaflet' {
-  namespace L {
-    function markerClusterGroup(options?: any): MarkerClusterGroup;
-    
-    interface MarkerClusterGroup {
-      addLayer(layer: any): this;
-      removeLayer(layer: any): this;
-      clearLayers(): this;
-      addTo(map: any): this;
-    }
-  }
-}
+import type { Property } from '../../services/api';
 
 interface ClusterLayerProps {
   properties: Property[];
@@ -26,15 +12,16 @@ interface ClusterLayerProps {
 
 const ClusterLayer: React.FC<ClusterLayerProps> = ({ properties, onSelectProperty, visible }) => {
   const map = useMap();
-  const [clusterGroup, setClusterGroup] = useState<L.MarkerClusterGroup | null>(null);
+  const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
 
   // Create or update the cluster group when properties change
   useEffect(() => {
     if (!map || !visible) return;
     
     // Remove existing cluster group if it exists
-    if (clusterGroup) {
-      map.removeLayer(clusterGroup);
+    if (clusterGroupRef.current) {
+      map.removeLayer(clusterGroupRef.current);
+      clusterGroupRef.current = null;
     }
     
     // Create a new cluster group
@@ -70,15 +57,16 @@ const ClusterLayer: React.FC<ClusterLayerProps> = ({ properties, onSelectPropert
     
     // Add the cluster group to the map
     map.addLayer(newClusterGroup);
-    setClusterGroup(newClusterGroup);
+    clusterGroupRef.current = newClusterGroup;
     
     // Cleanup function to remove the cluster group when the component unmounts
     return () => {
-      if (newClusterGroup && map) {
-        map.removeLayer(newClusterGroup);
+      if (clusterGroupRef.current && map) {
+        map.removeLayer(clusterGroupRef.current);
+        clusterGroupRef.current = null;
       }
     };
-  }, [map, properties, onSelectProperty, visible, clusterGroup]);
+  }, [map, properties, onSelectProperty, visible]);
 
   // This component doesn't render any React elements directly
   // It works by manipulating the map using Leaflet's API

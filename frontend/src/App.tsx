@@ -16,7 +16,7 @@ import TermsOfService from './pages/TermsOfService';
 import CompanySettings from './pages/CompanySettings';
 import ActivityLogs from './pages/ActivityLogs';
 import OnboardingTutorial from './pages/OnboardingTutorial';
-import PropertyMap from './pages/PropertyMap';
+import PropertyListings from './pages/PropertyListings';
 import WealthMapDashboard from './pages/WealthMapDashboard';
 // import InviteUser from './pages/InviteUser';
 
@@ -49,7 +49,7 @@ function App() {
               <Route path="/company-settings" element={<CompanySettings />} />
               <Route path="/activity-logs" element={<ActivityLogs />} />
               <Route path="/onboarding" element={<OnboardingTutorial />} />
-              <Route path="/property-map" element={<PropertyMap />} />
+              <Route path="/property-listings" element={<PropertyListings />} />
               <Route path="/wealth-map" element={<WealthMapDashboard />} />
             </Route>
           </Route>

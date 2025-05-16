@@ -34,6 +34,79 @@ api.interceptors.response.use(
   }
 );
 
+// Property types
+export interface Property {
+  id: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  county: string;
+  lat: number;
+  lng: number;
+  price: number;
+  sizeSqFt: number;
+  beds: number;
+  baths: number;
+  estimatedValue: number;
+  medianIncome: number;
+  population: number;
+  density: number;
+  createdAt: string;
+  owner: {
+    name: string;
+    netWorth: number;
+    occupation: string;
+    company: string;
+    purchaseDate: string;
+    previousOwners: Array<{
+      name: string;
+      purchaseDate: string;
+      saleDate: string;
+      purchasePrice: number;
+    }>;
+  };
+}
+
+export interface PropertyFilters {
+  minPrice?: number;
+  maxPrice?: number;
+  minSize?: number;
+  maxSize?: number;
+  minBeds?: number;
+  maxBeds?: number;
+  minBaths?: number;
+  maxBaths?: number;
+  city?: string;
+  state?: string;
+  zip?: string;
+  county?: string;
+  minEstimatedValue?: number;
+  maxEstimatedValue?: number;
+  minMedianIncome?: number;
+  maxMedianIncome?: number;
+  page?: number;
+  limit?: number;
+}
+
+// Property API calls
+export const propertyAPI = {
+  getAllProperties: async (page = 1, limit = 10): Promise<{ data: Property[]; total: number }> => {
+    const response = await api.get(`/properties?page=${page}&limit=${limit}`);
+    return { data: response.data, total: response.data.length };
+  },
+
+  getPropertyById: async (id: string): Promise<Property> => {
+    const response = await api.get(`/properties/${id}`);
+    return response.data;
+  },
+
+  filterProperties: async (filters: PropertyFilters): Promise<Property[]> => {
+    const response = await api.get('/properties/filter/search', { params: filters });
+    return response.data;
+  }
+};
+
 // Authentication API calls
 export const authAPI = {
   login: async (email: string, password: string) => {

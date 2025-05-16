@@ -1,25 +1,11 @@
 import React from 'react';
 import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-
-// Property interface
-export interface Property {
-  id: number;
-  lat: number;
-  lng: number;
-  address: string;
-  price: number;
-  sqft: number;
-  bedrooms: number;
-  bathrooms: number;
-  yearBuilt: number;
-  ownerNetWorth: number;
-  ownerName: string;
-}
+import type { Property } from '../../services/api';
 
 interface PropertyMarkerProps {
   property: Property;
-  onClick?: (property: Property) => void;
+  onClick: (property: Property) => void;
 }
 
 // Custom property icon based on property value
@@ -38,9 +24,10 @@ const getPropertyIcon = (price: number) => {
   });
 };
 
-export const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, onClick }) => {
+const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, onClick }) => {
   // Create a ref to access the marker instance
   const markerRef = React.useRef(null);
+  
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -50,7 +37,7 @@ export const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, onClic
   };
 
   return (
-    <Marker 
+    <Marker
       position={[property.lat, property.lng]} 
       icon={getPropertyIcon(property.price)}
       ref={markerRef}
@@ -60,14 +47,16 @@ export const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, onClic
           <h3 className="font-bold text-lg">{property.address}</h3>
           <div className="mt-2">
             <p><span className="font-semibold">Price:</span> {formatCurrency(property.price)}</p>
-            <p><span className="font-semibold">Size:</span> {property.sqft} sq ft</p>
-            <p><span className="font-semibold">Bedrooms:</span> {property.bedrooms}</p>
-            <p><span className="font-semibold">Bathrooms:</span> {property.bathrooms}</p>
-            <p><span className="font-semibold">Year Built:</span> {property.yearBuilt}</p>
+            <p><span className="font-semibold">Size:</span> {property.sizeSqFt} sq ft</p>
+            <p><span className="font-semibold">Bedrooms:</span> {property.beds}</p>
+            <p><span className="font-semibold">Bathrooms:</span> {property.baths}</p>
+            <p><span className="font-semibold">Location:</span> {property.city}, {property.state} {property.zip}</p>
           </div>
           <div className="mt-3 pt-2 border-t border-gray-200">
-            <p><span className="font-semibold">Owner:</span> {property.ownerName}</p>
-            <p><span className="font-semibold">Est. Net Worth:</span> {formatCurrency(property.ownerNetWorth)}</p>
+            <p><span className="font-semibold">Estimated Value:</span> {formatCurrency(property.estimatedValue)}</p>
+            <p><span className="font-semibold">Median Income:</span> {formatCurrency(property.medianIncome)}</p>
+            <p><span className="font-semibold">Population:</span> {property.population.toLocaleString()}</p>
+            <p><span className="font-semibold">Density:</span> {property.density.toLocaleString()} per sq mi</p>
           </div>
           <div className="mt-3">
             <button 
@@ -80,7 +69,7 @@ export const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, onClic
                   // @ts-ignore - leaflet type definitions are incomplete
                   marker.closePopup();
                 }
-                onClick && onClick(property);
+                onClick(property);
               }}
               aria-label="View property details"
             >
@@ -92,3 +81,5 @@ export const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, onClic
     </Marker>
   );
 };
+
+export default PropertyMarker;

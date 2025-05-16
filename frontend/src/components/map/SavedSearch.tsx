@@ -1,186 +1,132 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import type { PropertyFilters } from '../../services/api';
 
-interface SavedSearchProps {
-  onApplySavedSearch: (searchId: number) => void;
-  onSaveCurrentSearch: (name: string) => void;
+interface SavedSearch {
+  id: string;
+  name: string;
+  filters: PropertyFilters;
+  createdAt: string;
 }
 
-// Dummy saved searches data (to be replaced with API data later)
-const dummySavedSearches = [
-  {
-    id: 1,
-    name: 'High-value SF Properties',
-    criteria: {
-      minPrice: 2000000,
-      maxPrice: 10000000,
-      minSize: 2000,
-      maxSize: 10000,
-      location: 'San Francisco',
-    },
-    createdAt: '2025-05-10T12:00:00Z',
-  },
-  {
-    id: 2,
-    name: 'Mid-size Oakland Properties',
-    criteria: {
-      minPrice: 800000,
-      maxPrice: 1500000,
-      minSize: 1000,
-      maxSize: 2000,
-      location: 'Oakland',
-    },
-    createdAt: '2025-05-12T15:30:00Z',
-  },
-  {
-    id: 3,
-    name: 'Luxury Waterfront',
-    criteria: {
-      minPrice: 3000000,
-      maxPrice: 10000000,
-      minSize: 3000,
-      maxSize: 10000,
-      location: 'Waterfront',
-    },
-    createdAt: '2025-05-14T09:15:00Z',
-  },
-];
+interface SavedSearchProps {
+  onApplySavedSearch: (filters: PropertyFilters) => void;
+  onSaveCurrentSearch: (name: string, filters: PropertyFilters) => void;
+  onDeleteSavedSearch: (id: string) => void;
+  currentFilters: PropertyFilters;
+}
 
-export const SavedSearch: React.FC<SavedSearchProps> = ({
-  onApplySavedSearch,
+const SavedSearch: React.FC<SavedSearchProps> = ({ 
+  onApplySavedSearch, 
   onSaveCurrentSearch,
+  onDeleteSavedSearch,
+  currentFilters 
 }) => {
-  const [savedSearches, setSavedSearches] = useState(dummySavedSearches);
-  const [newSearchName, setNewSearchName] = useState('');
-  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [searchName, setSearchName] = useState('');
+
+  // Load saved searches from localStorage on component mount
+  useEffect(() => {
+    const savedSearchesString = localStorage.getItem('savedPropertySearches');
+    if (savedSearchesString) {
+      try {
+        const parsedSearches = JSON.parse(savedSearchesString);
+        setSavedSearches(parsedSearches);
+      } catch (e) {
+        console.error('Error parsing saved searches:', e);
+      }
+    }
+  }, []);
 
   const handleSaveSearch = () => {
-    if (newSearchName.trim()) {
-      onSaveCurrentSearch(newSearchName);
-      setNewSearchName('');
-      setIsAddingNew(false);
-      
-      // In a real app, we would update the savedSearches state after API call success
-      // For now, we'll just simulate it
-      const newId = Math.max(...savedSearches.map(s => s.id)) + 1;
-      setSavedSearches([
-        ...savedSearches,
-        {
-          id: newId,
-          name: newSearchName,
-          criteria: {
-            minPrice: 0,
-            maxPrice: 10000000,
-            minSize: 0,
-            maxSize: 10000,
-            location: '',
-          },
-          createdAt: new Date().toISOString(),
-        }
-      ]);
+    if (!searchName.trim()) {
+      alert('Please enter a name for your search');
+      return;
     }
+
+    onSaveCurrentSearch(searchName.trim(), currentFilters);
+    setSearchName('');
+    setIsSaving(false);
   };
 
-  const handleDeleteSearch = (id: number) => {
-    setSavedSearches(savedSearches.filter(search => search.id !== id));
+  const handleDeleteSearch = (id: string) => {
+    onDeleteSavedSearch(id);
+    setSavedSearches(prev => prev.filter(search => search.id !== id));
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Saved Searches</h3>
-        {!isAddingNew && (
-          <button
-            onClick={() => setIsAddingNew(true)}
-            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-          >
-            Save Current Search
-          </button>
-        )}
-      </div>
-
-      {isAddingNew && (
-        <div className="mb-4 p-3 border border-gray-200 rounded-md bg-gray-50">
-          <div className="flex items-center">
-            <input
-              type="text"
-              value={newSearchName}
-              onChange={(e) => setNewSearchName(e.target.value)}
-              placeholder="Enter search name"
-              className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
-            <div className="ml-2 flex space-x-2">
-              <button
-                onClick={handleSaveSearch}
-                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
-              >
-                Save
-              </button>
-              <button
-                onClick={() => {
-                  setIsAddingNew(false);
-                  setNewSearchName('');
-                }}
-                className="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500 text-sm"
-              >
-                Cancel
-              </button>
+    <div className="space-y-4">
+      {savedSearches.length === 0 ? (
+        <p className="text-gray-500 text-sm">No saved searches yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {savedSearches.map(search => (
+            <div key={search.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+              <div>
+                <h4 className="font-medium text-gray-900">{search.name}</h4>
+                <p className="text-sm text-gray-500">Saved on {formatDate(search.createdAt)}</p>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => onApplySavedSearch(search.filters)}
+                  className="px-2 py-1 text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Apply
+                </button>
+                <button
+                  onClick={() => handleDeleteSearch(search.id)}
+                  className="px-2 py-1 text-sm text-red-600 hover:text-red-800"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       )}
 
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {savedSearches.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">No saved searches yet</p>
-        ) : (
-          savedSearches.map((search) => (
-            <div
-              key={search.id}
-              className="p-3 border border-gray-200 rounded-md hover:bg-gray-50"
+      {isSaving ? (
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+            placeholder="Enter search name"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setIsSaving(false)}
+              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
             >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-medium">{search.name}</h4>
-                  <p className="text-xs text-gray-500">Saved on {formatDate(search.createdAt)}</p>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => onApplySavedSearch(search.id)}
-                    className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-                  >
-                    Apply
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSearch(search.id)}
-                    className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-              <div className="mt-2 text-xs text-gray-600">
-                <p>
-                  Price: ${search.criteria.minPrice.toLocaleString()} - $
-                  {search.criteria.maxPrice.toLocaleString()}
-                </p>
-                <p>
-                  Size: {search.criteria.minSize.toLocaleString()} - {search.criteria.maxSize.toLocaleString()} sq ft
-                </p>
-                {search.criteria.location && <p>Location: {search.criteria.location}</p>}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveSearch}
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setIsSaving(true)}
+          className="w-full px-3 py-2 text-sm text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
+        >
+          Save Current Search
+        </button>
+      )}
     </div>
   );
 };
+
+export default SavedSearch;

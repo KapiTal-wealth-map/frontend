@@ -24,10 +24,18 @@ interface WealthHeatmapLayerProps {
 const WealthHeatmapLayer: React.FC<WealthHeatmapLayerProps> = ({
   points,
   visible,
-  radius = 25,
-  blur = 15,
-  maxZoom = 17,
-  gradient = { 0.4: 'blue', 0.65: 'lime', 1: 'red' }
+  radius = 35,
+  blur = 20,
+  maxZoom = 18,
+  gradient = {
+    0.2: '#1a237e', // Deep blue for low values
+    0.4: '#0d47a1',
+    0.6: '#01579b',
+    0.7: '#0277bd',
+    0.8: '#039be5',
+    0.9: '#29b6f6',
+    1.0: '#4fc3f7'  // Light blue for high values
+  }
 }) => {
   const map = useMap();
   const heatLayerRef = useRef<any>(null);

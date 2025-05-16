@@ -1,19 +1,36 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import MapView from '../components/map/MapView';
-import { SavedSearch } from '../components/map/SavedSearch';
+import SavedSearch from '../components/map/SavedSearch';
 import MapLayersControl from '../components/map/MapLayersControl';
 import { SaveMapDialog, SavedMapList, type SavedMapView } from '../components/map/SavedMapView';
 import { BookmarkedPropertiesList, useBookmarkedProperties } from '../components/map/BookmarkedProperties';
 import { PropertyExportModal, usePropertyExport, type ExportFormat } from '../components/map/PropertyExport';
-import { PropertyFilters, type PropertyFilters as PropertyFiltersType } from '../components/map/PropertyFilters';
+import { PropertyFilters } from '../components/map/PropertyFilters';
 import PropertyDetail from '../components/map/PropertyDetail';
-import type { Property } from '../components/map/PropertyMarker';
+import type { Property, PropertyFilters as APIPropertyFilters } from '../services/api';
+
+interface SavedSearchData {
+  id: string;
+  name: string;
+  filters: APIPropertyFilters;
+  createdAt: string;
+}
 
 const WealthMapDashboard: React.FC = () => {
+  const location = useLocation();
+  const initialCenter = location.state?.center;
+  
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<'map' | 'saved' | 'analytics' | 'bookmarks'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'saved' | 'analytics' | 'bookmarks'>(
+    location.state?.activeTab || 'map'
+  );
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(
+    initialCenter ? [initialCenter.lat, initialCenter.lng] : undefined
+  );
+  const [savedSearches, setSavedSearches] = useState<SavedSearchData[]>([]);
   
   // Map layer states
   const [showProperties, setShowProperties] = useState(true);
@@ -21,18 +38,23 @@ const WealthMapDashboard: React.FC = () => {
   const [showClusters, setShowClusters] = useState(true);
   
   // Map filters state
-  const [propertyFilters, setPropertyFilters] = useState<PropertyFiltersType>({
+  const [propertyFilters, setPropertyFilters] = useState<APIPropertyFilters>({
     minPrice: undefined,
     maxPrice: undefined,
     minSize: undefined,
     maxSize: undefined,
-    bedrooms: undefined,
-    bathrooms: undefined,
-    yearBuiltMin: undefined,
-    yearBuiltMax: undefined,
-    location: '',
-    ownerNetWorthMin: undefined,
-    ownerNetWorthMax: undefined,
+    minBeds: undefined,
+    maxBeds: undefined,
+    minBaths: undefined,
+    maxBaths: undefined,
+    city: '',
+    state: '',
+    zip: '',
+    county: '',
+    minEstimatedValue: undefined,
+    maxEstimatedValue: undefined,
+    minMedianIncome: undefined,
+    maxMedianIncome: undefined,
   });
   
   // Save map dialog state
@@ -86,6 +108,19 @@ const WealthMapDashboard: React.FC = () => {
     }
   }, []);
 
+  // Load saved searches from localStorage
+  useEffect(() => {
+    const savedSearchesJson = localStorage.getItem('savedPropertySearches');
+    if (savedSearchesJson) {
+      try {
+        const loadedSearches = JSON.parse(savedSearchesJson) as SavedSearchData[];
+        setSavedSearches(loadedSearches);
+      } catch (error) {
+        console.error('Error loading saved searches:', error);
+      }
+    }
+  }, []);
+
   // Handle property selection
   const handlePropertySelect = useCallback((property: Property) => {
     setSelectedProperty(property);
@@ -102,7 +137,7 @@ const WealthMapDashboard: React.FC = () => {
   }, [openExportModal]);
 
   // Handle filters
-  const handleFilterChange = useCallback((newFilters: PropertyFiltersType) => {
+  const handleFilterChange = useCallback((newFilters: APIPropertyFilters) => {
     setPropertyFilters(newFilters);
   }, []);
 
@@ -117,13 +152,18 @@ const WealthMapDashboard: React.FC = () => {
       maxPrice: undefined,
       minSize: undefined,
       maxSize: undefined,
-      bedrooms: undefined,
-      bathrooms: undefined,
-      yearBuiltMin: undefined,
-      yearBuiltMax: undefined,
-      location: '',
-      ownerNetWorthMin: undefined,
-      ownerNetWorthMax: undefined,
+      minBeds: undefined,
+      maxBeds: undefined,
+      minBaths: undefined,
+      maxBaths: undefined,
+      city: '',
+      state: '',
+      zip: '',
+      county: '',
+      minEstimatedValue: undefined,
+      maxEstimatedValue: undefined,
+      minMedianIncome: undefined,
+      maxMedianIncome: undefined,
     });
   }, []);
 
@@ -133,21 +173,29 @@ const WealthMapDashboard: React.FC = () => {
     const newMap: SavedMapView = {
       id: Date.now().toString(),
       name,
-      center: [37.7749, -122.4194], // Just an example, in real app get from map ref
-      zoom: 13, // Just an example, in real app get from map ref
+      center: mapCenter || [34.0522, -118.2437], // Use current center or default to LA
+      zoom: 13,
       createdAt: new Date().toISOString(),
-      filters: propertyFilters
+      filters: propertyFilters,
+      showProperties,
+      showHeatmap,
+      showClusters
     };
     
     const updatedMaps = [...savedMaps, newMap];
     setSavedMaps(updatedMaps);
     localStorage.setItem('savedMapViews', JSON.stringify(updatedMaps));
     setIsSaveMapDialogOpen(false);
-  }, [savedMaps, propertyFilters]);
+  }, [savedMaps, propertyFilters, mapCenter, showProperties, showHeatmap, showClusters]);
 
   const handleLoadMap = useCallback((mapView: SavedMapView) => {
-    // In a real app, this would apply the saved map view settings to the map
-    console.log('Loading map view:', mapView);
+    // Apply the saved map view settings to the map
+    setMapCenter(mapView.center);
+    
+    // Restore map layer states
+    setShowProperties(mapView.showProperties ?? true);
+    setShowHeatmap(mapView.showHeatmap ?? false);
+    setShowClusters(mapView.showClusters ?? true);
     
     // If the saved map has filters, apply them
     if (mapView.filters) {
@@ -164,52 +212,65 @@ const WealthMapDashboard: React.FC = () => {
     localStorage.setItem('savedMapViews', JSON.stringify(updatedMaps));
   }, [savedMaps]);
   
-  const handleApplySavedSearch = useCallback((searchId: number) => {
-    // In a real app, this would fetch the search criteria and apply it to the map
-    console.log(`Applying saved search with ID: ${searchId}`);
+  const handleApplySavedSearch = useCallback((filters: APIPropertyFilters) => {
+    setPropertyFilters(filters);
+    setActiveTab('map'); // Switch to map tab to show the results
   }, []);
 
-  const handleSaveCurrentSearch = useCallback((name: string) => {
-    // In a real app, this would save the current search criteria to the backend
-    console.log(`Saving current search as: ${name}`);
-  }, []);
+  const handleSaveCurrentSearch = useCallback((name: string, filters: APIPropertyFilters) => {
+    const newSearch: SavedSearchData = {
+      id: Date.now().toString(),
+      name,
+      filters,
+      createdAt: new Date().toISOString()
+    };
+    const updatedSearches = [...savedSearches, newSearch];
+    setSavedSearches(updatedSearches);
+    localStorage.setItem('savedPropertySearches', JSON.stringify(updatedSearches));
+  }, [savedSearches]);
+
+  const handleDeleteSavedSearch = useCallback((id: string) => {
+    const updatedSearches = savedSearches.filter(search => search.id !== id);
+    setSavedSearches(updatedSearches);
+    localStorage.setItem('savedPropertySearches', JSON.stringify(updatedSearches));
+  }, [savedSearches]);
 
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-white shadow-lg overflow-hidden`}>
         <div className="h-full flex flex-col">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800">Wealth Map Tools</h2>
-            <p className="text-sm text-gray-500">Explore property wealth distribution</p>
+          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
+            <h2 className="text-xl font-semibold text-white">Wealth Map Tools</h2>
+            <p className="text-sm text-white">Explore property wealth distribution</p>
           </div>
 
           {/* Sidebar Tabs */}
           <div className="flex border-b border-gray-200">
             <button
-              className={`flex-1 py-3 text-center ${activeTab === 'map' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'}`}
+              className={`flex-1 py-3 text-center ${activeTab === 'map' ? 'text-blue-600 border-b-2 border-blue-600 -mb-[1px]' : 'text-gray-600'}`}
               onClick={() => setActiveTab('map')}
             >
               Map
             </button>
             <button
-              className={`flex-1 py-3 text-center ${activeTab === 'saved' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'}`}
+              className={`flex-1 py-3 text-center ${activeTab === 'saved' ? 'text-blue-600 border-b-2 border-blue-600 -mb-[1px]' : 'text-gray-600'}`}
               onClick={() => setActiveTab('saved')}
             >
               Saved
             </button>
-            <button
-              className={`flex-1 py-3 text-center ${activeTab === 'bookmarks' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'}`}
+            {/* <button
+              className={`flex-1 py-3 text-center ${activeTab === 'bookmarks' ? 'text-blue-600 border-b-2 border-blue-600 -mb-[1px]' : 'text-gray-600'}`}
               onClick={() => setActiveTab('bookmarks')}
             >
               Bookmarks
-            </button>
-            <button
-              className={`flex-1 py-3 text-center ${activeTab === 'analytics' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'}`}
+            </button> */}
+            {/* <button
+              className={`flex-1 py-3 text-center ${activeTab === 'analytics' ? 'text-blue-600 border-b-2 border-blue-600 -mb-[1px]' : 'text-gray-600'}`}
               onClick={() => setActiveTab('analytics')}
             >
               Analytics
-            </button>
+            </button> */}
           </div>
 
           {/* Tab Content */}
@@ -278,6 +339,8 @@ const WealthMapDashboard: React.FC = () => {
                   <SavedSearch
                     onApplySavedSearch={handleApplySavedSearch}
                     onSaveCurrentSearch={handleSaveCurrentSearch}
+                    onDeleteSavedSearch={handleDeleteSavedSearch}
+                    currentFilters={propertyFilters}
                   />
                 </div>
               </div>
@@ -348,7 +411,9 @@ const WealthMapDashboard: React.FC = () => {
             showProperties={showProperties}
             showHeatmap={showHeatmap}
             showClusters={showClusters}
-            key={`map-${showProperties}-${showHeatmap}-${showClusters}`} // Re-render map when layer settings change
+            initialCenter={mapCenter}
+            filters={propertyFilters}
+            key={`map-${showProperties}-${showHeatmap}-${showClusters}-${mapCenter?.join(',')}`}
           />
         </div>
         

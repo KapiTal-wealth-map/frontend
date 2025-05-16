@@ -32,7 +32,7 @@ export const MapToggleControls: React.FC<MapToggleControlsProps> = ({
         
         <button
           className="map-control-button"
-          onClick={() => map.setView([37.7749, -122.4194], 13)}
+          onClick={() => map.setView([34.0522, -118.2437], 13)}
           title="Reset Map View"
         >
           Reset View

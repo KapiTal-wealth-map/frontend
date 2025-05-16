@@ -4,6 +4,7 @@ import dashboard from '../../assets/onboarding/dashboard.png';
 import orgMem from '../../assets/onboarding/orgMem.png';
 import security from '../../assets/onboarding/security.png';
 import notification from '../../assets/onboarding/notification.png';
+import welcome from '../../assets/onboarding/wealthmap.png';
 
 interface TutorialStep {
   title: string;
@@ -19,7 +20,7 @@ const OnboardingTutorial: React.FC = () => {
     {
       title: 'Welcome to Wealth Map!',
       description: 'This quick tutorial will help you get started with our platform. We\'ll show you how to navigate, find properties, and manage your account.',
-      image: '/assets/onboarding/welcome.svg',
+      image: welcome,
     },
     {
       title: 'Your Dashboard',
