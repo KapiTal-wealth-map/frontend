@@ -1,0 +1,94 @@
+import React from 'react';
+import { Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+
+// Property interface
+export interface Property {
+  id: number;
+  lat: number;
+  lng: number;
+  address: string;
+  price: number;
+  sqft: number;
+  bedrooms: number;
+  bathrooms: number;
+  yearBuilt: number;
+  ownerNetWorth: number;
+  ownerName: string;
+}
+
+interface PropertyMarkerProps {
+  property: Property;
+  onClick?: (property: Property) => void;
+}
+
+// Custom property icon based on property value
+const getPropertyIcon = (price: number) => {
+  // Color based on property value
+  const color = price > 3000000 ? '#FF4500' : // Expensive
+              price > 1500000 ? '#FFA500' : // Mid-high
+              price > 800000 ? '#32CD32' : // Mid
+              '#3388FF'; // Lower price range
+  
+  return L.divIcon({
+    className: 'custom-property-marker',
+    html: `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
+};
+
+export const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, onClick }) => {
+  // Create a ref to access the marker instance
+  const markerRef = React.useRef(null);
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  return (
+    <Marker 
+      position={[property.lat, property.lng]} 
+      icon={getPropertyIcon(property.price)}
+      ref={markerRef}
+    >
+      <Popup>
+        <div className="property-popup">
+          <h3 className="font-bold text-lg">{property.address}</h3>
+          <div className="mt-2">
+            <p><span className="font-semibold">Price:</span> {formatCurrency(property.price)}</p>
+            <p><span className="font-semibold">Size:</span> {property.sqft} sq ft</p>
+            <p><span className="font-semibold">Bedrooms:</span> {property.bedrooms}</p>
+            <p><span className="font-semibold">Bathrooms:</span> {property.bathrooms}</p>
+            <p><span className="font-semibold">Year Built:</span> {property.yearBuilt}</p>
+          </div>
+          <div className="mt-3 pt-2 border-t border-gray-200">
+            <p><span className="font-semibold">Owner:</span> {property.ownerName}</p>
+            <p><span className="font-semibold">Est. Net Worth:</span> {formatCurrency(property.ownerNetWorth)}</p>
+          </div>
+          <div className="mt-3">
+            <button 
+              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                // Close the popup before showing the detailed view
+                const marker = markerRef.current;
+                if (marker) {
+                  // @ts-ignore - leaflet type definitions are incomplete
+                  marker.closePopup();
+                }
+                onClick && onClick(property);
+              }}
+              aria-label="View property details"
+            >
+              View Details
+            </button>
+          </div>
+        </div>
+      </Popup>
+    </Marker>
+  );
+};

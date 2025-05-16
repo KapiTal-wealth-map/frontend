@@ -1,0 +1,42 @@
+.map-toggle-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  background-color: white;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+}
+
+.map-control-button {
+  padding: 6px 10px;
+  margin: 4px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.map-control-button.active {
+  background-color: #4a90e2;
+  color: white;
+  border-color: #3a80d2;
+}
+
+.map-control-section {
+  margin-top: 8px;
+  border-top: 1px solid #e5e5e5;
+  padding-top: 8px;
+}
+
+.map-control-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}

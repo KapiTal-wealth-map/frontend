@@ -37,7 +37,7 @@ interface CompanyData {
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'organization'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'organization' | 'propertyMap'>('overview');
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState<ActivityLog[]>([]);
@@ -204,6 +204,16 @@ const Dashboard: React.FC = () => {
             >
               Organization
             </button>
+            <button
+              onClick={() => setActiveTab('propertyMap')}
+              className={`px-4 py-2 text-sm font-medium rounded-md ${
+                activeTab === 'propertyMap'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Property Map
+            </button>
           </div>
         </div>
         
@@ -296,12 +306,82 @@ const Dashboard: React.FC = () => {
                   >
                     Company Settings
                   </Link>
+                  <Link
+                    to="/wealth-map"
+                    className="block px-4 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-md hover:bg-green-100"
+                  >
+                    Launch Wealth Map
+                  </Link>
                 </div>
               </div>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'organization' ? (
           <TeamMembers />
+        ) : (
+          <div className="p-4">
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Property Wealth Map</h3>
+              <p className="text-gray-600">Explore property values, owner wealth distribution, and market trends.</p>
+            </div>
+            
+            <div className="flex flex-wrap gap-4 mb-6">
+              <Link 
+                to="/wealth-map" 
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M12 1.586l-4 4v12.828l4-4V1.586zM3.707 3.293A1 1 0 002 4v10a1 1 0 00.293.707L6 18.414V5.586L3.707 3.293zM17.707 5.293L14 1.586v12.828l2.293 2.293A1 1 0 0018 16V6a1 1 0 00-.293-.707z" clipRule="evenodd" />
+                </svg>
+                Full Interactive Map
+              </Link>
+              
+              <Link 
+                to="/property-map" 
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                </svg>
+                Property Listings
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+                <h4 className="font-semibold text-gray-800 mb-2">Property Search</h4>
+                <p className="text-sm text-gray-600 mb-3">Find properties by location, value, or owner details.</p>
+                <Link 
+                  to="/wealth-map" 
+                  className="text-sm text-indigo-600 hover:text-indigo-800"
+                >
+                  Start searching →
+                </Link>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+                <h4 className="font-semibold text-gray-800 mb-2">Wealth Distribution</h4>
+                <p className="text-sm text-gray-600 mb-3">Analyze wealth patterns with our interactive heat map.</p>
+                <Link 
+                  to="/wealth-map" 
+                  className="text-sm text-indigo-600 hover:text-indigo-800"
+                >
+                  View heat map →
+                </Link>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
+                <h4 className="font-semibold text-gray-800 mb-2">Saved Searches</h4>
+                <p className="text-sm text-gray-600 mb-3">Access your saved property searches and filters.</p>
+                <Link 
+                  to="/wealth-map" 
+                  className="text-sm text-indigo-600 hover:text-indigo-800"
+                >
+                  View saved searches →
+                </Link>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
