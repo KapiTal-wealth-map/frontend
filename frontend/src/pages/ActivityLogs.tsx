@@ -47,6 +47,7 @@ const ActivityLogs: React.FC = () => {
       }
       
       const data = await userAPI.getActivityLogs(params.toString());
+      console.log('Fetched logs:', data);
       setLogs(data);
       setError('');
     } catch (err: any) {
@@ -230,6 +231,10 @@ const ActivityLogs: React.FC = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Timestamp
                 </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User Agent
+                </th>
+                
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -253,6 +258,10 @@ const ActivityLogs: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(log.timestamp)}
                   </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">{log.userAgent}</div>
+                  </td>
+                  
                 </tr>
               ))}
             </tbody>

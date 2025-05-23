@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { propertyAPI } from '../services/api';
+import { propertyAPI, favoriteAPI } from '../services/api';
 import type { Property } from '../services/api';
 import { Link } from 'react-router-dom';
 
@@ -13,6 +13,8 @@ const PropertyListings: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]); // array of favorited property IDs
   const [filters, setFilters] = useState({
     minPrice: '',
     maxPrice: '',
@@ -24,6 +26,7 @@ const PropertyListings: React.FC = () => {
 
   useEffect(() => {
     fetchProperties();
+    fetchFavorites();
   }, [currentPage]);
 
   const fetchProperties = async () => {
@@ -41,6 +44,79 @@ const PropertyListings: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const fetchFavorites = async () => {
+    try {
+      const response = await favoriteAPI.getFavorites();
+      if (response.status === 200) {
+        const favoriteIds = response.data.map((prop: { propertyId: string; }) => prop.propertyId);
+        setFavorites(favoriteIds);
+      } else {
+        console.error('Failed to fetch favorites');
+      }
+    } catch (err) {
+      console.error('Error fetching favorites:', err);
+    }
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const isFavorited = (id: string) => {
+    if (favorites.length === 0) return false;
+    return favorites.includes(id);
+  }
+
+  const handleToggleFavorite = async (property: Property) => {
+    const isSaved = isFavorited(property.id);
+    if (isSaved) {
+      const response = await favoriteAPI.removeFavorite([property.id]);
+      if (response.status == 200) {
+        alert(`Successfully removed ${property.address} from favorites!`);
+      }
+      else {
+        alert(`Failed to remove ${property.address} from favorites!`);
+      }
+    }
+    else {
+      const response = await favoriteAPI.addFavorite([property.id]);
+      if (response.status == 201) {
+        alert(`Successfully added ${property.address} to favorites!`);
+      }
+      else {
+        alert(`Failed to add ${property.address} to favorites!`);
+      }
+    }
+    setFavorites((prev) =>
+      isSaved ? prev.filter(id => id !== property.id) : [...prev, property.id]
+    );
+  };
+  const handleBulkFavorite = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const response = await favoriteAPI.addFavorite(ids);
+    if (response.status === 201) {
+      setFavorites(prev => [...new Set([...prev, ...ids])]);
+      alert('Favorites added successfully!');
+    } else {
+      console.error('Failed to add favorites');
+    }
+  };
+
+  const handleBulkUnfavorite = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const response = await favoriteAPI.removeFavorite(ids);
+    if (response.status === 200) {
+      setFavorites(prev => prev.filter(id => !ids.includes(id)));
+      alert('Favorites removed successfully!');
+    } else {
+      console.error('Failed to remove favorites');
+    }
+    setFavorites(prev => prev.filter(id => !ids.includes(id)));
+  };
+
+
 
   const handleSort = (field: keyof Property) => {
     if (field === sortField) {
@@ -132,6 +208,38 @@ const PropertyListings: React.FC = () => {
         >
           View on Map
         </Link>
+        <Link
+          to="/favourite-properties"
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Favourite Properties
+        </Link>
+        <div>
+          <button
+            onClick={() => handleBulkFavorite(selectedIds)}
+            className={`px-4 py-2 text-white rounded transition 
+              ${selectedIds.length === 0 
+                ? 'bg-blue-300 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700 text-white'}
+            `}
+            disabled={selectedIds.length === 0}
+          >
+            Save Selected
+          </button>
+          <button
+            onClick={() => handleBulkUnfavorite(selectedIds)}
+            className={`px-4 py-2 text-white rounded transition 
+              ${selectedIds.length === 0 
+                ? 'bg-red-300 cursor-not-allowed' 
+                : 'bg-red-600 hover:bg-red-700 text-white'}
+            `}
+            disabled={selectedIds.length === 0}
+          >
+            Unsave Selected
+          </button>
+        </div>
+
+
       </div>
 
       {/* Filters */}
@@ -209,6 +317,19 @@ const PropertyListings: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.length === properties.length}
+                    onChange={() => {
+                      if (selectedIds.length === properties.length) {
+                        setSelectedIds([]);
+                      } else {
+                        setSelectedIds(properties.map(property => property.id));
+                      }
+                    }}
+                  />
+                </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
@@ -259,13 +380,23 @@ const PropertyListings: React.FC = () => {
                   Median Income
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  View on Map
+                </th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Save to Favorites
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredAndSortedProperties.map((property) => (
                 <tr key={property.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(property.id)}
+                    onChange={() => toggleSelection(property.id)}
+                  />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{property.address}</div>
                     <div className="text-sm text-gray-500">
@@ -299,6 +430,15 @@ const PropertyListings: React.FC = () => {
                       View on Map
                     </Link>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleToggleFavorite(property)}
+                      className={`px-3 py-1 rounded ${isFavorited(property.id) ? 'bg-yellow-400' : 'bg-gray-300'}`}
+                    >
+                      {isFavorited(property.id) ? 'Unsave' : 'Save'}
+                    </button>
+                  </td>
+                  
                 </tr>
               ))}
             </tbody>

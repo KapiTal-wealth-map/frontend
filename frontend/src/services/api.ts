@@ -243,4 +243,20 @@ export const notificationAPI = {
   }
 };
 
+// Favorite properties API calls
+export const favoriteAPI = {
+  addFavorite: async (propertyIds: string[]) => {
+    const response = await api.post('/properties/favourite', { propertyIds });
+    return { status: response.status, data: response.data };
+  },
+  removeFavorite: async (propertyIds: string[]) => {
+    const response = await api.delete('/properties/favourite', { data: { propertyIds } });
+    return { status: response.status, data: response.data };
+  },
+  getFavorites: async () => {
+    const response = await api.get('/properties/get/favourite');
+    return { status: response.status, data: response.data };
+  },
+}
+
 export default api;

@@ -285,10 +285,10 @@ const Dashboard: React.FC = () => {
                     </Link>
                   )}
                   <Link 
-                    to="/property-listings" 
+                    to="/favourite-properties" 
                     className="block px-4 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-md hover:bg-gray-100"
                   >
-                    Property Listings
+                    Favourite Properties
                   </Link>
                   <Link 
                     to="/wealth-map" 

@@ -66,8 +66,7 @@ const NotificationPreferences: React.FC = () => {
   }
   
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">Notification Preferences</h2>
+    <div className='mt-6'>
       
       {error && (
         <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">

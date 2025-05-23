@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { userAPI } from '../services/api';
 import { Link } from 'react-router-dom';
+import NotificationPreferences from './NotificationPreferences'; // adjust the path if needed
+
 
 interface ProfileData {
   name: string;
@@ -156,6 +158,11 @@ const Profile: React.FC = () => {
         </div>
       </form>
       
+      <div className="mt-10 pt-10 border-t border-gray-200">
+        <h3 className="text-lg font-medium text-gray-900">Notification Preferences</h3>
+        <NotificationPreferences />
+        
+      </div>
       <div className="mt-10 pt-10 border-t border-gray-200">
         <h3 className="text-lg font-medium text-gray-900">Security Settings</h3>
         
