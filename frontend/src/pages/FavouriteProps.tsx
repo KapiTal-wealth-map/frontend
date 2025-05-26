@@ -102,7 +102,7 @@ const FavoriteProps: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{property.address}</div>
                       <div className="text-sm text-gray-500">
-                        {property.city}, {property.state} {property.zip}
+                        {property.regionName} {property.zipCode} - {property.county}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
@@ -110,13 +110,13 @@ const FavoriteProps: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">{property.beds}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{property.baths}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{property.sizeSqFt.toLocaleString()}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(property.estimatedValue)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(property.medianIncome)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{property.livingSpace.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(property.zhvi[property.zhvi.length - 1])}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(property.medianHouseholdIncome)}</td>
                     <td className="px-6 py-4 text-right text-sm">
                       <Link
                         to="/wealth-map"
-                        state={{ center: { lat: property.lat, lng: property.lng } }}
+                        state={{ center: { lat: property.latitude, lng: property.longitude } }}
                         className="text-green-600 hover:text-green-900"
                       >
                         View on Map

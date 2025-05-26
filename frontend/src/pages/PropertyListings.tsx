@@ -18,8 +18,8 @@ const PropertyListings: React.FC = () => {
   const [filters, setFilters] = useState({
     minPrice: '',
     maxPrice: '',
-    city: '',
-    state: '',
+    county: '',
+    region: '',
     beds: '',
     baths: '',
   });
@@ -152,8 +152,8 @@ const PropertyListings: React.FC = () => {
       return (
         (!filters.minPrice || property.price >= Number(filters.minPrice)) &&
         (!filters.maxPrice || property.price <= Number(filters.maxPrice)) &&
-        (!filters.city || property.city.toLowerCase().includes(filters.city.toLowerCase())) &&
-        (!filters.state || property.state.toLowerCase().includes(filters.state.toLowerCase())) &&
+        (!filters.county || property.county.toLowerCase().includes(filters.county.toLowerCase())) &&
+        (!filters.region || property.regionName.toLowerCase().includes(filters.region.toLowerCase())) &&
         (!filters.beds || property.beds >= Number(filters.beds)) &&
         (!filters.baths || property.baths >= Number(filters.baths))
       );
@@ -271,18 +271,18 @@ const PropertyListings: React.FC = () => {
             <div className="flex space-x-2">
               <input
                 type="text"
-                name="city"
-                value={filters.city}
+                name="county"
+                value={filters.county}
                 onChange={handleFilterChange}
-                placeholder="City"
+                placeholder="County"
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
               <input
                 type="text"
-                name="state"
-                value={filters.state}
+                name="region"
+                value={filters.region}
                 onChange={handleFilterChange}
-                placeholder="State"
+                placeholder="Region"
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
@@ -347,7 +347,7 @@ const PropertyListings: React.FC = () => {
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('sizeSqFt')}
+                  onClick={() => handleSort('livingSpace')}
                 >
                   Size (sq ft)
                 </th>
@@ -368,14 +368,14 @@ const PropertyListings: React.FC = () => {
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('estimatedValue')}
+                  onClick={() => handleSort('zhvi')}
                 >
                   Estimated Value
                 </th>
                 <th
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('medianIncome')}
+                  onClick={() => handleSort('medianHouseholdIncome')}
                 >
                   Median Income
                 </th>
@@ -400,14 +400,14 @@ const PropertyListings: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{property.address}</div>
                     <div className="text-sm text-gray-500">
-                      {property.city}, {property.state} {property.zip}
+                      {property.regionName} {property.zipCode}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {formatCurrency(property.price)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {property.sizeSqFt.toLocaleString()}
+                    {property.livingSpace.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {property.beds}
@@ -416,15 +416,15 @@ const PropertyListings: React.FC = () => {
                     {property.baths}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(property.estimatedValue)}
+                    {formatCurrency(property.zhvi[property.zhvi.length - 1])}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(property.medianIncome)}
+                    {formatCurrency(property.medianHouseholdIncome)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <Link
                       to="/wealth-map"
-                      state={{ center: { lat: property.lat, lng: property.lng } }}
+                      state={{ center: { lat: property.latitude, lng: property.longitude } }}
                       className="text-green-600 hover:text-green-900"
                     >
                       View on Map

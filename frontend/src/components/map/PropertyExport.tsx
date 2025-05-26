@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Property } from './PropertyMarker';
+import type { Property } from '../../services/api';
 
 // Export format options
 export type ExportFormat = 'pdf' | 'csv' | 'excel';

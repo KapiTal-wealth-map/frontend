@@ -5,8 +5,6 @@ interface MapLayersControlProps {
   onToggleProperties: (show: boolean) => void;
   showHeatmap: boolean;
   onToggleHeatmap: (show: boolean) => void;
-  showClusters: boolean;
-  onToggleClusters: (show: boolean) => void;
 }
 
 const MapLayersControl: React.FC<MapLayersControlProps> = ({
@@ -14,8 +12,6 @@ const MapLayersControl: React.FC<MapLayersControlProps> = ({
   onToggleProperties,
   showHeatmap,
   onToggleHeatmap,
-  showClusters,
-  onToggleClusters
 }) => {
   return (
     <div className="bg-white p-4 rounded-lg shadow">
@@ -47,7 +43,7 @@ const MapLayersControl: React.FC<MapLayersControlProps> = ({
           </label>
         </div>
         
-        <div className="flex items-center">
+        {/* <div className="flex items-center">
           <input
             type="checkbox"
             id="clusters-layer"
@@ -58,7 +54,7 @@ const MapLayersControl: React.FC<MapLayersControlProps> = ({
           <label htmlFor="clusters-layer" className="text-sm text-gray-700">
             Property Clusters
           </label>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -10,8 +10,6 @@ interface MapToggleControlsProps {
 }
 
 export const MapToggleControls: React.FC<MapToggleControlsProps> = ({
-  showHeatMap,
-  onToggleHeatMap,
   mapType,
   onChangeMapType
 }) => {
@@ -22,17 +20,10 @@ export const MapToggleControls: React.FC<MapToggleControlsProps> = ({
   return (
     <div className="map-toggle-controls">
       <div className="flex flex-col">
-        <button
-          className={`map-control-button ${showHeatMap ? 'active' : ''}`}
-          onClick={onToggleHeatMap}
-          title="Toggle Wealth Heat Map"
-        >
-          {showHeatMap ? 'Hide Heat Map' : 'Show Wealth Heat Map'}
-        </button>
         
         <button
           className="map-control-button"
-          onClick={() => map.setView([34.0522, -118.2437], 13)}
+          onClick={() => map.setView([39.8283, -98.5795,], 4)}
           title="Reset Map View"
         >
           Reset View

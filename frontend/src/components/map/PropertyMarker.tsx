@@ -38,7 +38,8 @@ const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, onClick }) =>
 
   return (
     <Marker
-      position={[property.lat, property.lng]} 
+      key={property.id}
+      position={[property.latitude, property.longitude]} 
       icon={getPropertyIcon(property.price)}
       ref={markerRef}
     >
@@ -47,16 +48,16 @@ const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, onClick }) =>
           <h3 className="font-bold text-lg">{property.address}</h3>
           <div className="mt-2">
             <p><span className="font-semibold">Price:</span> {formatCurrency(property.price)}</p>
-            <p><span className="font-semibold">Size:</span> {property.sizeSqFt} sq ft</p>
+            <p><span className="font-semibold">Size:</span> {property.livingSpace} sq ft</p>
             <p><span className="font-semibold">Bedrooms:</span> {property.beds}</p>
             <p><span className="font-semibold">Bathrooms:</span> {property.baths}</p>
-            <p><span className="font-semibold">Location:</span> {property.city}, {property.state} {property.zip}</p>
+            <p><span className="font-semibold">Location:</span> {property.regionName} {property.zipCode} - {property.county}</p>
           </div>
           <div className="mt-3 pt-2 border-t border-gray-200">
-            <p><span className="font-semibold">Estimated Value:</span> {formatCurrency(property.estimatedValue)}</p>
-            <p><span className="font-semibold">Median Income:</span> {formatCurrency(property.medianIncome)}</p>
-            <p><span className="font-semibold">Population:</span> {property.population.toLocaleString()}</p>
-            <p><span className="font-semibold">Density:</span> {property.density.toLocaleString()} per sq mi</p>
+            <p><span className="font-semibold">Estimated Value:</span> {formatCurrency(property.zhvi[property.zhvi.length - 1])}</p>
+            <p><span className="font-semibold">Median Income:</span> {formatCurrency(property.medianHouseholdIncome)}</p>
+            <p><span className="font-semibold">Population:</span> {property.zipCodePopulation.toLocaleString()}</p>
+            <p><span className="font-semibold">Density:</span> {property.zipCodeDensity.toLocaleString()} per sq mi</p>
           </div>
           <div className="mt-3">
             <button 

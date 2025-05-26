@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Property } from './PropertyMarker';
+import type { Property } from '../../services/api';
 
 export interface BookmarkedProperty extends Property {
   bookmarkedAt: string;
@@ -35,7 +35,7 @@ export const BookmarkControl: React.FC<BookmarkControlProps> = ({
 interface BookmarkedPropertiesListProps {
   bookmarkedProperties: BookmarkedProperty[];
   onViewProperty: (property: Property) => void;
-  onRemoveBookmark: (propertyId: number) => void;
+  onRemoveBookmark: (propertyId: string) => void;
 }
 
 export const BookmarkedPropertiesList: React.FC<BookmarkedPropertiesListProps> = ({ 
@@ -61,9 +61,9 @@ export const BookmarkedPropertiesList: React.FC<BookmarkedPropertiesListProps> =
               <div className="flex justify-between items-start">
                 <div className="cursor-pointer" onClick={() => onViewProperty(property)}>
                   <h4 className="font-medium text-gray-800">{property.address}</h4>
-                  <p className="text-sm text-gray-600">{formatCurrency(property.price)} • {property.sqft} sq ft</p>
+                  <p className="text-sm text-gray-600">{formatCurrency(property.price)} • {property.livingSpace} sq ft</p>
                   <p className="text-sm text-gray-500">
-                    {property.bedrooms} bed • {property.bathrooms} bath • Built in {property.yearBuilt}
+                    {property.beds} bed • {property.baths} bath 
                   </p>
                 </div>
                 <BookmarkControl 
@@ -120,11 +120,11 @@ export const useBookmarkedProperties = () => {
     }
   };
   
-  const isPropertyBookmarked = (propertyId: number) => {
+  const isPropertyBookmarked = (propertyId: string) => {
     return bookmarkedProperties.some(p => p.id === propertyId);
   };
   
-  const removeBookmark = (propertyId: number) => {
+  const removeBookmark = (propertyId: string) => {
     setBookmarkedProperties(bookmarkedProperties.filter(p => p.id !== propertyId));
   };
   

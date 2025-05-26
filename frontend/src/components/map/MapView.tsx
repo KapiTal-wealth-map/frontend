@@ -23,17 +23,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Note: Custom property icons are now managed in the PropertyMarker component
-
-// interface ClusterProperties {
-//   center: [number, number];
-//   count: number;
-// }
-
 interface MapViewProps {
   showProperties: boolean;
   showHeatmap: boolean;
-  showClusters: boolean;
   initialCenter?: [number, number];
   filters?: PropertyFilters;
 }
@@ -57,14 +49,13 @@ const MapViewController: React.FC<{
 const MapView: React.FC<MapViewProps> = ({ 
   showProperties, 
   showHeatmap, 
-  showClusters,
   initialCenter,
   filters 
 }) => {
   const [viewState, setViewState] = useState({
-    longitude: initialCenter?.[1] || -118.2437,
-    latitude: initialCenter?.[0] || 34.0522,
-    zoom: 13
+    latitude: initialCenter?.[0] || 39.8283,
+    longitude: initialCenter?.[1] || -98.5795,
+    zoom: 4
   });
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,43 +86,56 @@ const MapView: React.FC<MapViewProps> = ({
 
   // Filter properties based on criteria
   const filteredProperties = useMemo(() => properties.filter(property => {
+  try {
     if (!filters) return true;
-    
-    return (
+
+    const lastZhvi = property.zhvi?.[property.zhvi.length - 1] ?? 0;
+
+    const result = (
       property.price >= (filters.minPrice ?? 0) &&
       property.price <= (filters.maxPrice ?? Number.MAX_VALUE) &&
-      property.sizeSqFt >= (filters.minSize ?? 0) &&
-      property.sizeSqFt <= (filters.maxSize ?? Number.MAX_VALUE) &&
+      property.livingSpace >= (filters.minSize ?? 0) &&
+      property.livingSpace <= (filters.maxSize ?? Number.MAX_VALUE) &&
       property.beds >= (filters.minBeds ?? 0) &&
       property.beds <= (filters.maxBeds ?? Number.MAX_VALUE) &&
       property.baths >= (filters.minBaths ?? 0) &&
       property.baths <= (filters.maxBaths ?? Number.MAX_VALUE) &&
-      (!filters.city || property.city.toLowerCase().includes(filters.city.toLowerCase())) &&
-      (!filters.state || property.state.toLowerCase().includes(filters.state.toLowerCase())) &&
-      (!filters.zip || property.zip.includes(filters.zip)) &&
-      (!filters.county || property.county.toLowerCase().includes(filters.county.toLowerCase())) &&
-      property.estimatedValue >= (filters.minEstimatedValue ?? 0) &&
-      property.estimatedValue <= (filters.maxEstimatedValue ?? Number.MAX_VALUE) &&
-      property.medianIncome >= (filters.minMedianIncome ?? 0) &&
-      property.medianIncome <= (filters.maxMedianIncome ?? Number.MAX_VALUE)
+      (!filters.county || property.county?.toLowerCase().includes(filters.county.toLowerCase())) &&
+      (!filters.region || property.regionName?.toLowerCase().includes(filters.region.toLowerCase())) &&
+      (!filters.zip || property.zipCode.includes(filters.zip)) &&
+      lastZhvi >= (filters.minEstimatedValue ?? 0) &&
+      lastZhvi <= (filters.maxEstimatedValue ?? Number.MAX_VALUE) &&
+      property.medianHouseholdIncome >= (filters.minMedianIncome ?? 0) &&
+      property.medianHouseholdIncome <= (filters.maxMedianIncome ?? Number.MAX_VALUE)
     );
-  }), [properties, filters]);
+
+    if (!result) {
+      console.log('Filtered out:', property.address);
+    }
+
+    return result;
+  } catch(e) {
+    console.error('Error filtering property:', property, e);
+    return false;
+  }
+}), [properties, filters]);
+
 
   // Convert property data to heatmap points with better intensity calculation
   const heatmapPoints = useMemo(() => {
     if (properties.length === 0) return [];
     
     // Find min and max values for normalization
-    const values = properties.map(prop => prop.estimatedValue);
+    const values = properties.map(prop => prop.zhvi[prop.zhvi.length - 1]);
     const minValue = Math.min(...values);
     const maxValue = Math.max(...values);
     const range = maxValue - minValue;
     
     return properties.map(prop => ({
-      lat: prop.lat,
-      lng: prop.lng,
+      lat: prop.latitude,
+      lng: prop.longitude,
       // Normalize intensity between 0 and 1, with exponential scaling for better visualization
-      intensity: Math.pow((prop.estimatedValue - minValue) / range, 0.5)
+      intensity: Math.pow((prop.zhvi[prop.zhvi.length - 1] - minValue) / range, 0.5)
     }));
   }, [properties]);
 
@@ -165,7 +169,7 @@ const MapView: React.FC<MapViewProps> = ({
         ...prev,
         longitude: initialCenter[1],
         latitude: initialCenter[0],
-        zoom: 13
+        zoom: 4
       }));
     }
   }, [initialCenter]);
@@ -221,21 +225,24 @@ const MapView: React.FC<MapViewProps> = ({
           <ZoomControl position="bottomright" />
           <MapViewController center={[viewState.latitude, viewState.longitude]} zoom={viewState.zoom} />
           
-          {showProperties && showClusters && (
-            <ClusterLayer
-              properties={filteredProperties}
-              onSelectProperty={handlePropertySelect}
-              visible={true}
-            />
+          {showProperties && (
+            <>
+              <ClusterLayer
+                properties={filteredProperties}
+                onSelectProperty={handlePropertySelect}
+                visible={true}
+              />
+            </>
           )}
+
           
-          {showProperties && !showClusters && filteredProperties.map(property => (
+          {/* {showProperties && filteredProperties.map(property => (
             <PropertyMarker
               key={property.id}
               property={property}
               onClick={handlePropertySelect}
             />
-          ))}
+          ))} */}
           
           {showHeatMap && (
             <WealthHeatmapLayer 

@@ -23,25 +23,14 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onClose }) =>
         // Add dummy owner data if not present
         if (!details.owner) {
           details.owner = {
+            id: 'dummy-owner-id',
+            age: 45,
+            email: "john@smith.com",
+            phone: "123-456-7890",
             name: "John Smith",
             netWorth: 2500000,
             occupation: "Tech Executive",
-            company: "TechCorp Inc.",
             purchaseDate: "2022-06-15",
-            previousOwners: [
-              {
-                name: "Sarah Johnson",
-                purchaseDate: "2018-03-10",
-                saleDate: "2022-06-15",
-                purchasePrice: details.price * 0.85
-              },
-              {
-                name: "Michael Brown",
-                purchaseDate: "2015-11-22",
-                saleDate: "2018-03-10",
-                purchasePrice: details.price * 0.7
-              }
-            ]
           };
         }
         setDetailedProperty(details);
@@ -124,7 +113,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onClose }) =>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Size</p>
-                        <p className="font-medium">{property.sizeSqFt.toLocaleString()} sq ft</p>
+                        <p className="font-medium">{property.livingSpace.toLocaleString()} sq ft</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Bedrooms</p>
@@ -151,7 +140,6 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onClose }) =>
                         <div>
                           <p className="font-semibold">{detailedProperty.owner.name}</p>
                           <p className="text-sm text-gray-500">{detailedProperty.owner.occupation}</p>
-                          <p className="text-sm text-gray-500">{detailedProperty.owner.company}</p>
                         </div>
                       </div>
                       <div className="mt-2">
@@ -166,7 +154,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onClose }) =>
                   </div>
                 )}
 
-                {detailedProperty?.owner?.previousOwners && detailedProperty.owner.previousOwners.length > 0 && (
+                {/* {detailedProperty?.owner?.previousOwners && detailedProperty.owner.previousOwners.length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold text-gray-800">Transaction History</h3>
                     <div className="mt-2 border border-gray-200 rounded-lg divide-y">
@@ -182,7 +170,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onClose }) =>
                       ))}
                     </div>
                   </div>
-                )}
+                )} */}
 
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800">Actions</h3>

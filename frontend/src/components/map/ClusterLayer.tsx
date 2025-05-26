@@ -40,7 +40,7 @@ const ClusterLayer: React.FC<ClusterLayerProps> = ({ properties, onSelectPropert
     
     // Add markers to the cluster group
     properties.forEach(property => {
-      const marker = L.marker([property.lat, property.lng], {
+      const marker = L.marker([property.latitude, property.longitude], {
         icon: L.divIcon({
           html: `<div class="bg-red-500 rounded-full flex items-center justify-center text-white p-2">$</div>`,
           className: 'custom-marker',

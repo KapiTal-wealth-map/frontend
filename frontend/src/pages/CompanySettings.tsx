@@ -110,7 +110,7 @@ const CompanySettings: React.FC = () => {
       // Update company settings with the new data
       await userAPI.updateCompanySettings({
         name: settings.name,
-        logoUrl: logoUrl,
+        logoUrl: logoUrl ?? '',
         dataAccessSettings: settings.dataAccessSettings
       });
       

@@ -38,35 +38,35 @@ api.interceptors.response.use(
 export interface Property {
   id: string;
   address: string;
-  city: string;
-  state: string;
-  zip: string;
+  zipCode: string;
   county: string;
-  lat: number;
-  lng: number;
+  latitude: number;
+  longitude: number;
   price: number;
-  sizeSqFt: number;
-  beds: number;
-  baths: number;
-  estimatedValue: number;
-  medianIncome: number;
-  population: number;
-  density: number;
-  createdAt: string;
-  owner: {
-    name: string;
-    netWorth: number;
-    occupation: string;
-    company: string;
-    purchaseDate: string;
-    previousOwners: Array<{
-      name: string;
-      purchaseDate: string;
-      saleDate: string;
-      purchasePrice: number;
-    }>;
-  };
+  beds: number ;
+  baths: number ;
+  livingSpace: number ;
+  zipCodePopulation: number ;
+  zipCodeDensity: number ;
+  medianHouseholdIncome: number ;
+  sizeRank: number ;
+  regionName: string ;
+  zhvi: number[] ;
+  marketValue: number[];
+  owner?: Owner ;
 }
+
+export interface Owner {
+  id: string;
+  name: string ;
+  netWorth: number ;
+  occupation: string ;
+  age: number ;
+  email: string ;
+  phone: string ;
+  purchaseDate: string ; // ISO string
+}
+
 
 export interface PropertyFilters {
   minPrice?: number;
@@ -77,10 +77,9 @@ export interface PropertyFilters {
   maxBeds?: number;
   minBaths?: number;
   maxBaths?: number;
-  city?: string;
-  state?: string;
-  zip?: string;
   county?: string;
+  region?: string;
+  zip?: string;
   minEstimatedValue?: number;
   maxEstimatedValue?: number;
   minMedianIncome?: number;
@@ -217,7 +216,7 @@ export const userAPI = {
   
   updateCompanySettings: async (data: {
     name: string;
-    logoUrl: string | null;
+    logoUrl: string ;
     dataAccessSettings: any;
   }) => {
     const response = await api.put('/users/company-settings', data);

@@ -47,10 +47,9 @@ const WealthMapDashboard: React.FC = () => {
     maxBeds: undefined,
     minBaths: undefined,
     maxBaths: undefined,
-    city: '',
-    state: '',
-    zip: '',
     county: '',
+    region: '',
+    zip: '',
     minEstimatedValue: undefined,
     maxEstimatedValue: undefined,
     minMedianIncome: undefined,
@@ -156,10 +155,9 @@ const WealthMapDashboard: React.FC = () => {
       maxBeds: undefined,
       minBaths: undefined,
       maxBaths: undefined,
-      city: '',
-      state: '',
-      zip: '',
       county: '',
+      region: '',
+      zip: '',
       minEstimatedValue: undefined,
       maxEstimatedValue: undefined,
       minMedianIncome: undefined,
@@ -173,8 +171,8 @@ const WealthMapDashboard: React.FC = () => {
     const newMap: SavedMapView = {
       id: Date.now().toString(),
       name,
-      center: mapCenter || [34.0522, -118.2437], // Use current center or default to LA
-      zoom: 13,
+      center: mapCenter || [39.8283,-98.5795,], // Use current center or default to LA
+      zoom: 4,
       createdAt: new Date().toISOString(),
       filters: propertyFilters,
       showProperties,
@@ -312,8 +310,8 @@ const WealthMapDashboard: React.FC = () => {
                     onToggleProperties={(value) => handleLayerChange('properties', value)}
                     showHeatmap={showHeatmap}
                     onToggleHeatmap={(value) => handleLayerChange('heatmap', value)}
-                    showClusters={showClusters}
-                    onToggleClusters={(value) => handleLayerChange('clusters', value)}
+                    // showClusters={showClusters}
+                    // onToggleClusters={(value) => handleLayerChange('clusters', value)}
                   />
                 </div>
               </div>
@@ -410,7 +408,6 @@ const WealthMapDashboard: React.FC = () => {
           <MapView 
             showProperties={showProperties}
             showHeatmap={showHeatmap}
-            showClusters={showClusters}
             initialCenter={mapCenter}
             filters={propertyFilters}
             key={`map-${showProperties}-${showHeatmap}-${showClusters}-${mapCenter?.join(',')}`}
