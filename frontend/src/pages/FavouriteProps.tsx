@@ -11,8 +11,7 @@ const FavoriteProps: React.FC = () => {
   const fetchFavorites = async () => {
     try {
       const response = await favoriteAPI.getFavorites();
-      const favoriteIds = response.data.map((fav: { propertyId: string }) => fav.propertyId);
-      console.log('Favorite IDs:', favoriteIds);
+      const favoriteIds = response.data.map((fav: { id: string }) => fav.id);
       if (favoriteIds.length === 0) {
         setFavoriteProperties([]);
         setLoading(false);
@@ -21,11 +20,11 @@ const FavoriteProps: React.FC = () => {
 
       // Fetch full property details for each favorite
       const propertyPromises = favoriteIds.map(async (id: string) => {
+
         const res = await propertyAPI.getPropertyById(id)
         return res;
       });
       const resolvedProperties = await Promise.all(propertyPromises);
-        console.log('Resolved Properties:', resolvedProperties);
         const validProperties = resolvedProperties.filter((property: Property) => property !== null);
       setFavoriteProperties(validProperties);
     } catch (err) {

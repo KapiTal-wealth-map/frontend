@@ -5,10 +5,9 @@ import SavedSearch from '../components/map/SavedSearch';
 import MapLayersControl from '../components/map/MapLayersControl';
 import { SaveMapDialog, SavedMapList, type SavedMapView } from '../components/map/SavedMapView';
 import { BookmarkedPropertiesList, useBookmarkedProperties } from '../components/map/BookmarkedProperties';
-import { PropertyExportModal, usePropertyExport, type ExportFormat } from '../components/map/PropertyExport';
 import { PropertyFilters } from '../components/map/PropertyFilters';
 import PropertyDetail from '../components/map/PropertyDetail';
-import type { Property, PropertyFilters as APIPropertyFilters } from '../services/api';
+import { type Property, type PropertyFilters as APIPropertyFilters, mapViewAPI } from '../services/api';
 
 interface SavedSearchData {
   id: string;
@@ -31,11 +30,12 @@ const WealthMapDashboard: React.FC = () => {
     initialCenter ? [initialCenter.lat, initialCenter.lng] : undefined
   );
   const [savedSearches, setSavedSearches] = useState<SavedSearchData[]>([]);
+  const [companySavedMaps, setCompanySavedMaps] = useState<SavedMapView[]>([]);
+  const [showCompanySaves, setShowCompanySaves] = useState(false);
   
   // Map layer states
   const [showProperties, setShowProperties] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [showClusters, setShowClusters] = useState(true);
   
   // Map filters state
   const [propertyFilters, setPropertyFilters] = useState<APIPropertyFilters>({
@@ -63,21 +63,10 @@ const WealthMapDashboard: React.FC = () => {
   // Bookmarked properties
   const { 
     bookmarkedProperties, 
-    toggleBookmark, 
-    isPropertyBookmarked, 
     removeBookmark 
   } = useBookmarkedProperties();
   
   // We'll use the removeBookmark function directly for IDs
-  
-  // Property export modal
-  const {
-    isExportModalOpen,
-    propertyToExport,
-    openExportModal,
-    closeExportModal,
-    handleExport
-  } = usePropertyExport();
   
   // Handler for layer changes to ensure they're properly synchronized
   const handleLayerChange = (layer: 'properties' | 'heatmap' | 'clusters', value: boolean) => {
@@ -88,23 +77,25 @@ const WealthMapDashboard: React.FC = () => {
       case 'heatmap':
         setShowHeatmap(value);
         break;
-      case 'clusters':
-        setShowClusters(value);
-        break;
     }
   };
 
   // Load saved maps from localStorage on component mount
   useEffect(() => {
-    const savedMapsString = localStorage.getItem('savedMapViews');
-    if (savedMapsString) {
-      try {
-        const parsedMaps = JSON.parse(savedMapsString);
-        setSavedMaps(parsedMaps);
-      } catch (e) {
-        console.error('Error parsing saved maps:', e);
+    const fetchSavedMaps = async () => {
+      const savedMaps = await mapViewAPI.getSavedMapViews();
+      if (savedMaps) {
+        try {
+          const userViews = savedMaps.filter((map: SavedMapView) => map.scope === 'private');
+          const companyViews = savedMaps.filter((map: SavedMapView) => map.scope === 'company');
+          setSavedMaps(userViews);
+          setCompanySavedMaps(companyViews);
+        } catch (e) {
+          console.error('Error parsing saved maps:', e);
+        }
       }
-    }
+    };
+    fetchSavedMaps();
   }, []);
 
   // Load saved searches from localStorage
@@ -124,16 +115,6 @@ const WealthMapDashboard: React.FC = () => {
   const handlePropertySelect = useCallback((property: Property) => {
     setSelectedProperty(property);
   }, []);
-
-  // Handle property bookmark toggle
-  const handleToggleBookmark = useCallback((property: Property) => {
-    toggleBookmark(property);
-  }, [toggleBookmark]);
-
-  // Handle property export
-  const handlePropertyExport = useCallback((property: Property) => {
-    openExportModal(property);
-  }, [openExportModal]);
 
   // Handle filters
   const handleFilterChange = useCallback((newFilters: APIPropertyFilters) => {
@@ -166,7 +147,7 @@ const WealthMapDashboard: React.FC = () => {
   }, []);
 
   // Map save/load functions
-  const handleSaveMap = useCallback((name: string) => {
+  const handleSaveMap = useCallback(async (name: string) => {
     // Create new saved map
     const newMap: SavedMapView = {
       id: Date.now().toString(),
@@ -177,14 +158,14 @@ const WealthMapDashboard: React.FC = () => {
       filters: propertyFilters,
       showProperties,
       showHeatmap,
-      showClusters
+      scope: 'private', // Use current scope (private or company)
     };
     
     const updatedMaps = [...savedMaps, newMap];
     setSavedMaps(updatedMaps);
-    localStorage.setItem('savedMapViews', JSON.stringify(updatedMaps));
+    await mapViewAPI.saveMapView(newMap);
     setIsSaveMapDialogOpen(false);
-  }, [savedMaps, propertyFilters, mapCenter, showProperties, showHeatmap, showClusters]);
+  }, [savedMaps, propertyFilters, mapCenter, showProperties, showHeatmap]);
 
   const handleLoadMap = useCallback((mapView: SavedMapView) => {
     // Apply the saved map view settings to the map
@@ -193,7 +174,6 @@ const WealthMapDashboard: React.FC = () => {
     // Restore map layer states
     setShowProperties(mapView.showProperties ?? true);
     setShowHeatmap(mapView.showHeatmap ?? false);
-    setShowClusters(mapView.showClusters ?? true);
     
     // If the saved map has filters, apply them
     if (mapView.filters) {
@@ -204,11 +184,32 @@ const WealthMapDashboard: React.FC = () => {
     setActiveTab('map');
   }, []);
   
-  const handleDeleteMap = useCallback((id: string) => {
+  const handleDeleteMap = useCallback(async (id: string) => {
     const updatedMaps = savedMaps.filter(map => map.id !== id);
     setSavedMaps(updatedMaps);
-    localStorage.setItem('savedMapViews', JSON.stringify(updatedMaps));
+    await mapViewAPI.deleteSavedMapView(id);
   }, [savedMaps]);
+
+  const handleSaveMapToCompany = useCallback((name: string) => {
+  const newMap: SavedMapView = {
+    id: Date.now().toString(),
+    name,
+    center: mapCenter || [39.8283, -98.5795], // default center if undefined
+    zoom: 4,
+    createdAt: new Date().toISOString(),
+    filters: propertyFilters,
+    showProperties,
+    showHeatmap,
+    scope: 'company', // Save as company scope
+  };
+
+  const updatedCompanyMaps = [...companySavedMaps, newMap];
+  setCompanySavedMaps(updatedCompanyMaps);
+  mapViewAPI.saveMapView(newMap);
+  setIsSaveMapDialogOpen(false);
+
+  console.log('Saved map view for company:', newMap);
+}, [companySavedMaps, propertyFilters, mapCenter, showProperties, showHeatmap]);
   
   const handleApplySavedSearch = useCallback((filters: APIPropertyFilters) => {
     setPropertyFilters(filters);
@@ -298,12 +299,26 @@ const WealthMapDashboard: React.FC = () => {
                 <div className="bg-white rounded-lg p-4 shadow-sm">
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="font-medium">Map Layers</h3>
-                    <button
-                      onClick={() => setIsSaveMapDialogOpen(true)}
-                      className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-                    >
-                      Save Current View
-                    </button>
+                    <div className="space-x-2">
+    <button
+      onClick={() => setIsSaveMapDialogOpen(true)}
+      className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+    >
+      Save My View
+    </button>
+    <button
+      onClick={() => {
+        // Open prompt to get name for company save
+        const companySaveName = prompt('Enter name for company-wide saved map view:');
+        if (companySaveName) {
+          handleSaveMapToCompany(companySaveName);
+        }
+      }}
+      className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+    >
+      Save to Company
+    </button>
+  </div>
                   </div>
                   <MapLayersControl
                     showProperties={showProperties}
@@ -318,31 +333,53 @@ const WealthMapDashboard: React.FC = () => {
             )}
 
             {activeTab === 'saved' && (
-              <div className="space-y-4">
-                <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <h3 className="font-medium mb-3">Saved Map Views</h3>
-                  {savedMaps.length === 0 ? (
-                    <p className="text-gray-500">You haven't saved any map views yet.</p>
-                  ) : (
-                    <SavedMapList
-                      savedMaps={savedMaps}
-                      onLoad={handleLoadMap}
-                      onDelete={handleDeleteMap}
-                    />
-                  )}
-                </div>
-                
-                <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <h3 className="font-medium mb-3">Saved Searches</h3>
-                  <SavedSearch
-                    onApplySavedSearch={handleApplySavedSearch}
-                    onSaveCurrentSearch={handleSaveCurrentSearch}
-                    onDeleteSavedSearch={handleDeleteSavedSearch}
-                    currentFilters={propertyFilters}
-                  />
-                </div>
-              </div>
-            )}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-medium mb-3">Saved Map Views</h3>
+          <button
+            onClick={() => setShowCompanySaves(!showCompanySaves)}
+            className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
+          >
+            {showCompanySaves ? 'View Your Saves' : 'View Company Saves'}
+          </button>
+        </div>
+
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          {showCompanySaves ? (
+            companySavedMaps.length === 0 ? (
+              <p className="text-gray-500">No company saved views available.</p>
+            ) : (
+              <SavedMapList
+                savedMaps={companySavedMaps}
+                onLoad={handleLoadMap}
+                onDelete={() => alert('Company saves cannot be deleted here')}
+              />
+            )
+          ) : (
+            savedMaps.length === 0 ? (
+              <p className="text-gray-500">You haven't saved any map views yet.</p>
+            ) : (
+              <SavedMapList
+                savedMaps={savedMaps}
+                onLoad={handleLoadMap}
+                onDelete={handleDeleteMap}
+              />
+            )
+          )}
+        </div>
+
+        {/* Saved Searches remain the same */}
+        <div className="bg-white rounded-lg p-4 shadow-sm">
+          <h3 className="font-medium mb-3">Saved Searches</h3>
+          <SavedSearch
+            onApplySavedSearch={handleApplySavedSearch}
+            onSaveCurrentSearch={handleSaveCurrentSearch}
+            onDeleteSavedSearch={handleDeleteSavedSearch}
+            currentFilters={propertyFilters}
+          />
+        </div>
+      </div>
+    )}
             
             {activeTab === 'bookmarks' && (
               <div className="bg-white rounded-lg p-4 shadow-sm">
@@ -410,7 +447,7 @@ const WealthMapDashboard: React.FC = () => {
             showHeatmap={showHeatmap}
             initialCenter={mapCenter}
             filters={propertyFilters}
-            key={`map-${showProperties}-${showHeatmap}-${showClusters}-${mapCenter?.join(',')}`}
+            key={`map-${showProperties}-${showHeatmap}-${mapCenter?.join(',')}`}
           />
         </div>
         
@@ -426,14 +463,6 @@ const WealthMapDashboard: React.FC = () => {
           <SaveMapDialog
             onSave={handleSaveMap}
             onCancel={() => setIsSaveMapDialogOpen(false)}
-          />
-        )}
-        
-        {isExportModalOpen && propertyToExport && (
-          <PropertyExportModal
-            property={propertyToExport}
-            onClose={closeExportModal}
-            onExport={handleExport}
           />
         )}
       </div>

@@ -3,7 +3,6 @@ import { MapContainer, TileLayer, ZoomControl, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
-import PropertyMarker from './PropertyMarker';
 import type { Property, PropertyFilters } from '../../services/api';
 import { MapToggleControls } from './MapToggleControls';
 import WealthHeatmapLayer from './WealthHeatmapLayer';

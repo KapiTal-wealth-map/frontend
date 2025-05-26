@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { Property } from '../../services/api';
-import { propertyAPI } from '../../services/api';
+import { propertyAPI, favoriteAPI } from '../../services/api';
+import image from '../../assets/house.png'
 
 interface PropertyDetailProps {
   property: Property | null;
@@ -100,7 +101,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onClose }) =>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="bg-gray-100 h-48 rounded-lg mb-4 flex items-center justify-center">
-                  <p className="text-gray-500">Property Image Placeholder</p>
+                  <img src={image} className="object-cover w-full h-full rounded-lg"></img>
                 </div>
                 
                 <div className="space-y-4">
@@ -175,14 +176,12 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onClose }) =>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800">Actions</h3>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    onClick={async () => {
+                      await favoriteAPI.addFavorite([property.id])
+                      alert('Property added to favorites!');
+                    }}>
                       Save Property
-                    </button>
-                    <button className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">
-                      Export Details
-                    </button>
-                    <button className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">
-                      View Wealth Trail
                     </button>
                   </div>
                 </div>

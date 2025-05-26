@@ -92,7 +92,7 @@ export interface PropertyFilters {
 export const propertyAPI = {
   getAllProperties: async (page = 1, limit = 10): Promise<{ data: Property[]; total: number }> => {
     const response = await api.get(`/properties?page=${page}&limit=${limit}`);
-    return { data: response.data, total: response.data.length };
+    return { data: response.data.data, total: response.data.total };
   },
 
   getPropertyById: async (id: string): Promise<Property> => {
@@ -246,7 +246,7 @@ export const notificationAPI = {
 export const favoriteAPI = {
   addFavorite: async (propertyIds: string[]) => {
     const response = await api.post('/properties/favourite', { propertyIds });
-    return { status: response.status, data: response.data };
+    return { status: response.status, message: response.data.message };
   },
   removeFavorite: async (propertyIds: string[]) => {
     const response = await api.delete('/properties/favourite', { data: { propertyIds } });
@@ -257,5 +257,23 @@ export const favoriteAPI = {
     return { status: response.status, data: response.data };
   },
 }
+
+// Save map view API calls
+export const mapViewAPI = {
+  saveMapView: async (viewData: any) => {
+    const response = await api.post('/properties/map-view', viewData);
+    return response.data;
+  },
+  
+  getSavedMapViews: async () => {
+    const response = await api.get('/properties/get/map-view');
+    return response.data;
+  },
+  
+  deleteSavedMapView: async (viewId: string) => {
+    const response = await api.delete(`/properties/map-view/${viewId}`);
+    return response.data;
+  }
+};
 
 export default api;

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMap } from 'react-leaflet';
-import type { PropertyFilters } from '../../services/api';
+import { mapViewAPI, type PropertyFilters } from '../../services/api';
 
 // Mock data structure for saved map views
 export interface SavedMapView {
@@ -12,7 +12,14 @@ export interface SavedMapView {
   filters?: PropertyFilters;
   showProperties?: boolean;
   showHeatmap?: boolean;
-  showClusters?: boolean;
+  scope: string;
+}
+
+
+interface UseSavedMapViewsArgs {
+  filters: PropertyFilters;
+  showProperties: boolean;
+  showHeatmap: boolean;
 }
 
 interface SaveMapDialogProps {
@@ -116,43 +123,46 @@ export const SavedMapList: React.FC<SavedMapListProps> = ({ savedMaps, onLoad, o
   );
 };
 
-// Hook to save and manage map views
-export const useSavedMapViews = () => {
-  const [savedMaps, setSavedMaps] = useState<SavedMapView[]>(() => {
-    // Get saved maps from local storage, if available
-    const savedMapString = localStorage.getItem('savedMapViews');
-    return savedMapString ? JSON.parse(savedMapString) : [];
-  });
-  
+export const useSavedMapViews = ({ filters, showProperties, showHeatmap }: UseSavedMapViewsArgs) => {
+  const [savedMaps, setSavedMaps] = useState<SavedMapView[]>([]);
   const map = useMap();
-  
-  const saveCurrentView = (name: string) => {
+
+  useEffect(() => {
+    const fetchViews = async () => {
+      const views = await mapViewAPI.getSavedMapViews();
+      setSavedMaps(views || []);
+    };
+    fetchViews();
+  }, []);
+
+  const saveCurrentView = async (name: string) => {
     const center = map.getCenter();
-    const newSavedMap: SavedMapView = {
-      id: Date.now().toString(),
+    const newView: Partial<SavedMapView> = {
       name,
       center: [center.lat, center.lng],
       zoom: map.getZoom(),
-      createdAt: new Date().toISOString(),
+      filters,
+      showProperties,
+      showHeatmap,
     };
-    
-    const updatedMaps = [...savedMaps, newSavedMap];
-    setSavedMaps(updatedMaps);
-    localStorage.setItem('savedMapViews', JSON.stringify(updatedMaps));
-    
-    return newSavedMap;
+    const created = await mapViewAPI.saveMapView(newView);
+    if (created) {
+      setSavedMaps((prev) => [...prev, created]);
+    }
+    return created;
   };
-  
+
   const loadSavedView = (mapView: SavedMapView) => {
     map.setView(mapView.center, mapView.zoom);
+    // Note: You must also apply `filters`, `showProperties`, and `showHeatmap` to UI manually
+    // This could be done via props/callbacks/context depending on your app structure
   };
-  
-  const deleteSavedView = (id: string) => {
-    const updatedMaps = savedMaps.filter(map => map.id !== id);
-    setSavedMaps(updatedMaps);
-    localStorage.setItem('savedMapViews', JSON.stringify(updatedMaps));
+
+  const deleteSavedView = async (id: string) => {
+    await mapViewAPI.deleteSavedMapView(id);
+    setSavedMaps((prev) => prev.filter((view) => view.id !== id));
   };
-  
+
   return {
     savedMaps,
     saveCurrentView,
