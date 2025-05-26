@@ -39,7 +39,7 @@ const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'organization' >('overview');
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState<ActivityLog[]>([]);
   const [stats, setStats] = useState<ActivityStats>({
     totalActivities: 0,

@@ -34,7 +34,7 @@ export const PropertyFilters: React.FC<PropertyFiltersProps> = ({
   onResetFilters
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [, setActiveFilters] = useState<string[]>([]);
   const [localFilters, setLocalFilters] = useState<PropertyFilters>(filters);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
