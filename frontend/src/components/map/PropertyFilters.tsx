@@ -10,8 +10,6 @@ export interface PropertyFilters {
   maxBeds?: number;
   minBaths?: number;
   maxBaths?: number;
-  city?: string;
-  state?: string;
   zip?: string;
   county?: string;
   minEstimatedValue?: number;
@@ -64,7 +62,7 @@ export const PropertyFilters: React.FC<PropertyFiltersProps> = ({
       newActiveFilters.push('Bathrooms');
     }
     
-    if (filters.city || filters.state || filters.zip || filters.county) {
+    if (filters.zip || filters.county) {
       newActiveFilters.push('Location');
     }
     
@@ -260,30 +258,7 @@ export const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               </div>
             </div>
 
-            {/* Location */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">City</label>
-              <input
-                type="text"
-                name="city"
-                value={localFilters.city || ''}
-                onChange={handleInputChange}
-                placeholder="Enter city"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">State</label>
-              <input
-                type="text"
-                name="state"
-                value={localFilters.state || ''}
-                onChange={handleInputChange}
-                placeholder="Enter state"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+          
 
             <div className="space-y-3">
               <label className="block text-sm font-medium text-gray-700">ZIP Code</label>

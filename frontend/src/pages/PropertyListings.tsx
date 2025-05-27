@@ -4,8 +4,6 @@ import type { Property } from '../services/api';
 import { Link } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import autoTable from 'jspdf-autotable';
-import ReactDOM from 'react-dom';
 import { Chart, registerables } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import 'chartjs-plugin-annotation';
@@ -27,7 +25,6 @@ const PropertyListings: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [loadingFavorites] = useState(true);
   const [filters, setFilters] = useState({
     minPrice: '',
     maxPrice: '',
@@ -67,6 +64,7 @@ const PropertyListings: React.FC = () => {
       const allProps = response?.data || [];
       setAllProperties(allProps);
       applyFiltersAndPagination(allProps, filters, currentPage);
+      setTotalItems(response?.total || 0);
     } catch (err) {
       setError('Failed to fetch properties. Please try again later.');
       console.error('Error fetching properties:', err);
@@ -846,7 +844,7 @@ const addPropertyComparisonChart = async (doc: any, properties: any[], x: number
         `Median: $${Math.round(prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)])} • ` +
         `Std Dev: $${Math.round(stdDev).toLocaleString()}`,
         x,
-        newY - 10
+        y - 10
       );
       
       console.log('Successfully added price distribution chart');
@@ -982,7 +980,7 @@ const addPropertyComparisonChart = async (doc: any, properties: any[], x: number
     setProperties(sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE));
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     const newFilters = {
       ...filters,
@@ -1145,7 +1143,7 @@ const addPropertyComparisonChart = async (doc: any, properties: any[], x: number
               id="county"
               name="county"
               value={filters.county}
-              onChange={handleFilterChange}
+              onChange={(e) => handleFilterChange(e)}
               placeholder="Any county"
               className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
             />
@@ -1159,7 +1157,7 @@ const addPropertyComparisonChart = async (doc: any, properties: any[], x: number
                   id="beds"
                   name="beds"
                   value={filters.beds}
-                  onChange={handleFilterChange}
+                  onChange={(e) => handleFilterChange(e)}
                   className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                 >
                   <option value="">Beds (Any)</option>
@@ -1173,6 +1171,7 @@ const addPropertyComparisonChart = async (doc: any, properties: any[], x: number
                   id="baths"
                   name="baths"
                   value={filters.baths}
+                  title='Baths'
                   onChange={handleFilterChange}
                   className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                 >
@@ -1226,6 +1225,7 @@ const addPropertyComparisonChart = async (doc: any, properties: any[], x: number
                   <input
                     type="checkbox"
                     checked={selectedIds.length === properties.length}
+                    placeholder='1,2,3'
                     onChange={() => {
                       if (selectedIds.length === properties.length) {
                         setSelectedIds([]);
@@ -1298,6 +1298,7 @@ const addPropertyComparisonChart = async (doc: any, properties: any[], x: number
                   <td className="px-6 py-4 whitespace-nowrap">
                   <input
                     type="checkbox"
+                    placeholder='1,3'
                     checked={selectedIds.includes(property.id)}
                     onChange={() => toggleSelection(property.id)}
                   />

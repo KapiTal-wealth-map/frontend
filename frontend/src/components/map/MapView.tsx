@@ -108,9 +108,9 @@ const MapView: React.FC<MapViewProps> = ({
       property.medianHouseholdIncome <= (filters.maxMedianIncome ?? Number.MAX_VALUE)
     );
 
-    if (!result) {
-      console.log('Filtered out:', property.address);
-    }
+    // if (!result) {
+    //   console.log('Filtered out:', property.address);
+    // }
 
     return result;
   } catch(e) {

@@ -123,7 +123,7 @@ const WealthMapDashboard: React.FC = () => {
 
   const handleApplyFilters = useCallback(() => {
     // In a real app, this would apply the filters to the property data
-    console.log('Applying filters:', propertyFilters);
+    // console.log('Applying filters:', propertyFilters);
   }, [propertyFilters]);
 
   const handleResetFilters = useCallback(() => {
@@ -425,18 +425,6 @@ const WealthMapDashboard: React.FC = () => {
               </svg>
             </button>
             <h1 className="text-2xl font-semibold text-gray-800">Property Wealth Map</h1>
-          </div>
-          <div className="flex space-x-2">
-            <button
-              className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
-            >
-              Export Data
-            </button>
-            <button
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Share Map
-            </button>
           </div>
         </div>
 

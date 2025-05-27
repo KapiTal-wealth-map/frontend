@@ -134,13 +134,13 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onClose }) =>
     ],
   };
 
-  const chartOptions = {
+  const chartOptions: any = {
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
       intersect: false,
-      mode: 'nearest',
-      axis: 'x',
+      mode: 'nearest' as const,
+      axis: 'x' as const,
     },
     plugins: {
       legend: {
@@ -164,10 +164,10 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onClose }) =>
           size: 14,
         },
         callbacks: {
-          title: function (context) {
+          title: function (context: any[]) {
             return `Year: ${context[0].label}`;
           },
-          label: function (context) {
+          label: function (context: any) {
             let label = context.dataset.label || '';
             if (label) {
               label += ': ';
@@ -217,7 +217,7 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property, onClose }) =>
         },
         ticks: {
           padding: 8,
-          callback: function (value) {
+          callback: function (value: number) {
             return `$${Math.round(value / 1000)}K`; // Format as $XXXK to match the image
           },
         },
