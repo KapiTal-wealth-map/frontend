@@ -59,7 +59,9 @@ Experience the application live: [Click Here To Redirect To The Application](htt
 We are developing this project as two separate repositories:
 
 - **Frontend Repository**: All client-side code (UI, map, user flows)
-- **Backend Repository**: All server-side code (APIs, data processing, integration)
+- **Backend Repository**: All server-side code (APIs, data processing, integration) 
+
+Can access the backend repo here: https://github.com/KapiTal-wealth-map/backend
 
 ## Frontend Repo
 
